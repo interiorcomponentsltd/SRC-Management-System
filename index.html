@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spirit Realm Centre - Management System</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- Load app data -->
+    <script src="app_data.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, #4169E1 0%, #2E4A9E 100%);
+            color: white;
+            padding: 0;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .logo-section {
+            padding: 30px 20px;
+            text-align: center;
+            background: rgba(0,0,0,0.2);
+            border-bottom: 2px solid #87CEEB;
+        }
+
+        .logo-img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin-bottom: 15px;
+            border: 3px solid #87CEEB;
+            object-fit: cover;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        .logo-section h1 {
+            font-size: 18px;
+            margin-bottom: 5px;
+            color: #FFFFE0;
+        }
+
+        .logo-section p {
+            font-size: 12px;
+            color: #87CEEB;
+        }
+
+        .nav-menu {
+            list-style: none;
+            padding: 20px 0;
+        }
+
+        .nav-item {
+            padding: 15px 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-left: 4px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .nav-item:hover {
+            background: rgba(135, 206, 235, 0.2);
+            border-left-color: #87CEEB;
+        }
+
+        .nav-item.active {
+            background: rgba(135, 206, 235, 0.3);
+            border-left-color: #FFFFE0;
+            font-weight: bold;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: 280px;
+            flex: 1;
+            padding: 30px;
+            width: calc(100% - 280px);
+        }
+
+        .page-header {
+            background: white;
+            padding: 25px 30px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-title {
+            font-size: 28px;
+            color: #2E4A9E;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border-left: 5px solid #4169E1;
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #2E4A9E;
+            margin: 10px 0;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+
+        /* Tables */
+        .table-container {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: #f8f9fa;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            color: #2E4A9E;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #4169E1;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2E4A9E;
+        }
+
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-warning { background: #fff3cd; color: #856404; }
+        .badge-info { background: #d1ecf1; color: #0c5460; }
+
+        /* Login */
+        .login-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #4169E1 0%, #87CEEB 100%);
+        }
+
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            width: 400px;
+            text-align: center;
+        }
+
+        .login-logo {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            border: 4px solid #4169E1;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #4169E1;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .alert-success { background: #d4edda; color: #155724; }
+        .alert-danger { background: #f8d7da; color: #721c24; }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: #999;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Authentication credentials
+        const AUTH_USERS = {
+            'admin': { password: 'SRC2024admin', dept: 'all', role: 'admin' },
+            'ministers': { password: 'SRC2024ministers', dept: 'Ministers', role: 'leader' },
+            'counselors': { password: 'SRC2024counselors', dept: 'Counselors', role: 'leader' },
+            'ushers': { password: 'SRC2024ushers', dept: 'Ushers', role: 'leader' },
+            'media': { password: 'SRC2024media', dept: 'Media Team', role: 'leader' },
+            'security': { password: 'SRC2024security', dept: 'Security', role: 'leader' }
+        };
+
+        // LocalStorage hook
+        const useLocalStorage = (key, initialValue) => {
+            const [value, setValue] = useState(() => {
+                try {
+                    const item = window.localStorage.getItem(key);
+                    return item ? JSON.parse(item) : initialValue;
+                } catch {
+                    return initialValue;
+                }
+            });
+
+            useEffect(() => {
+                try {
+                    window.localStorage.setItem(key, JSON.stringify(value));
+                } catch (error) {
+                    console.error('Error saving to localStorage:', error);
+                }
+            }, [key, value]);
+
+            return [value, setValue];
+        };
+
+        // Utility Functions
+        const formatDate = (date) => {
+            if (!date) return '';
+            return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        };
+
+        const exportToExcel = (data, filename) => {
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
+            XLSX.writeFile(wb, `${filename}.xlsx`);
+        };
+
+        // Login Component
+        function LoginPage({ onLogin }) {
+            const [username, setUsername] = useState('');
+            const [password, setPassword] = useState('');
+            const [error, setError] = useState('');
+
+            const handleLogin = (e) => {
+                e.preventDefault();
+                const user = AUTH_USERS[username.toLowerCase()];
+                
+                if (user && user.password === password) {
+                    onLogin({ username, ...user });
+                } else {
+                    setError('Invalid username or password');
+                }
+            };
+
+            return (
+                <div className="login-container">
+                    <div className="login-box">
+                        <img src={window.APP_DATA?.logo || ''} alt="SRC Logo" className="login-logo" />
+                        <h2 style={{marginBottom: '10px', color: '#2E4A9E'}}>Spirit Realm Centre</h2>
+                        <p style={{marginBottom: '30px', color: '#666'}}>Church Management System</p>
+                        
+                        {error && (
+                            <div className="alert alert-danger">
+                                {error}
+                            </div>
+                        )}
+                        
+                        <form onSubmit={handleLogin}>
+                            <input
+                                type="text"
+                                className="form-input"
+                                placeholder="Username"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                required
+                            />
+                            <input
+                                type="password"
+                                className="form-input"
+                                placeholder="Password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                            />
+                            <button type="submit" className="btn btn-primary" style={{width: '100%'}}>
+                                Login
+                            </button>
+                        </form>
+                        
+                        <div style={{marginTop: '30px', fontSize: '12px', color: '#999'}}>
+                            <strong>Department Leaders:</strong> Use your department username
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        // Sidebar Component
+        function Sidebar({ currentPage, setCurrentPage, user, onLogout }) {
+            const menuItems = [
+                { id: 'dashboard', icon: '📊', label: 'Dashboard' },
+                { id: 'members', icon: '👥', label: 'All Members' },
+                { id: 'firstTimers', icon: '✨', label: 'First Timers' },
+                { id: 'attendance', icon: '✓', label: 'Attendance' },
+                { id: 'departments', icon: '🏢', label: 'Departments' },
+                { id: 'analytics', icon: '📈', label: 'Analytics' },
+            ];
+
+            return (
+                <div className="sidebar">
+                    <div className="logo-section">
+                        <img src={window.APP_DATA?.logo || ''} alt="Logo" className="logo-img" />
+                        <h1>Spirit Realm Centre</h1>
+                        <p>Management System</p>
+                        <div style={{marginTop: '15px', fontSize: '11px', color: '#FFFFE0'}}>
+                            Logged in as: <strong>{user.username}</strong>
+                        </div>
+                    </div>
+                    <ul className="nav-menu">
+                        {menuItems.map(item => (
+                            <li 
+                                key={item.id}
+                                className={`nav-item ${currentPage === item.id ? 'active' : ''}`}
+                                onClick={() => setCurrentPage(item.id)}
+                            >
+                                <span>{item.icon}</span>
+                                <span>{item.label}</span>
+                            </li>
+                        ))}
+                        <li 
+                            className="nav-item"
+                            onClick={onLogout}
+                            style={{borderTop: '1px solid rgba(255,255,255,0.2)', marginTop: '20px'}}
+                        >
+                            <span>🚪</span>
+                            <span>Logout</span>
+                        </li>
+                    </ul>
+                </div>
+            );
+        }
+
+        // Dashboard Component
+        function Dashboard({ members, attendance }) {
+            const stats = {
+                total: members.filter(m => m.type !== 'first_timer').length,
+                firstTimers: members.filter(m => m.type === 'first_timer').length,
+                newMembers: members.filter(m => m.type === 'new').length,
+            };
+
+            return (
+                <div>
+                    <div className="page-header">
+                        <h1 className="page-title">Dashboard Overview</h1>
+                        <div style={{color: '#666'}}>{formatDate(new Date())}</div>
+                    </div>
+
+                    <div className="stats-grid">
+                        <div className="stat-card">
+                            <div className="stat-label">Total Members</div>
+                            <div className="stat-value">{stats.total}</div>
+                        </div>
+                        <div className="stat-card">
+                            <div className="stat-label">First Timers</div>
+                            <div className="stat-value">{stats.firstTimers}</div>
+                        </div>
+                        <div className="stat-card">
+                            <div className="stat-label">New Members</div>
+                            <div className="stat-value">{stats.newMembers}</div>
+                        </div>
+                        <div className="stat-card">
+                            <div className="stat-label">Attendance Records</div>
+                            <div className="stat-value">{attendance.length}</div>
+                        </div>
+                    </div>
+
+                    <div className="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Phone</th>
+                                    <th>Type</th>
+                                    <th>Department</th>
+                                    <th>Date Joined</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {members.slice(0, 10).map(member => (
+                                    <tr key={member.id}>
+                                        <td><strong>{member.name}</strong></td>
+                                        <td>{member.phone}</td>
+                                        <td>
+                                            <span className={`badge badge-${
+                                                member.type === 'first_timer' ? 'info' : 
+                                                member.type === 'new' ? 'success' : 'warning'
+                                            }`}>
+                                                {member.type.replace('_', ' ')}
+                                            </span>
+                                        </td>
+                                        <td>{member.department || 'N/A'}</td>
+                                        <td>{formatDate(member.dateJoined)}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            );
+        }
+
+        // Members Page
+        function MembersPage({ members }) {
+            const [search, setSearch] = useState('');
+
+            const filtered = members.filter(m => 
+                m.name.toLowerCase().includes(search.toLowerCase()) ||
+                m.phone.includes(search)
+            );
+
+            return (
+                <div>
+                    <div className="page-header">
+                        <h1 className="page-title">All Members ({members.length})</h1>
+                        <button className="btn btn-primary" onClick={() => exportToExcel(members, 'Members_Export')}>
+                            📥 Export to Excel
+                        </button>
+                    </div>
+
+                    <div style={{marginBottom: '20px'}}>
+                        <input
+                            type="text"
+                            className="form-input"
+                            placeholder="Search by name or phone..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            style={{maxWidth: '400px'}}
+                        />
+                    </div>
+
+                    <div className="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Phone</th>
+                                    <th>Gender</th>
+                                    <th>Department</th>
+                                    <th>Position</th>
+                                    <th>Date Joined</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filtered.map(member => (
+                                    <tr key={member.id}>
+                                        <td><strong>{member.name}</strong></td>
+                                        <td>{member.phone}</td>
+                                        <td>{member.gender}</td>
+                                        <td>{member.department || 'N/A'}</td>
+                                        <td>{member.position && <span className="badge badge-success">{member.position}</span>}</td>
+                                        <td>{formatDate(member.dateJoined)}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        {filtered.length === 0 && (
+                            <div className="empty-state">
+                                <p>No members found</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        // Main App Component
+        function App() {
+            const [user, setUser] = useState(null);
+            const [currentPage, setCurrentPage] = useState('dashboard');
+            const [members, setMembers] = useLocalStorage('src_members', window.APP_DATA?.members || []);
+            const [attendance, setAttendance] = useLocalStorage('src_attendance', window.APP_DATA?.attendance || []);
+
+            const handleLogout = () => {
+                setUser(null);
+                setCurrentPage('dashboard');
+            };
+
+            if (!user) {
+                return <LoginPage onLogin={setUser} />;
+            }
+
+            // Filter members by department for non-admin users
+            const filteredMembers = user.role === 'admin' 
+                ? members 
+                : members.filter(m => m.department === user.dept);
+
+            return (
+                <div className="app-container">
+                    <Sidebar 
+                        currentPage={currentPage} 
+                        setCurrentPage={setCurrentPage}
+                        user={user}
+                        onLogout={handleLogout}
+                    />
+                    <div className="main-content">
+                        {currentPage === 'dashboard' && (
+                            <Dashboard members={filteredMembers} attendance={attendance} />
+                        )}
+                        {currentPage === 'members' && (
+                            <MembersPage members={filteredMembers} />
+                        )}
+                        {currentPage === 'firstTimers' && (
+                            <MembersPage members={filteredMembers.filter(m => m.type === 'first_timer')} />
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        // Render App
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
