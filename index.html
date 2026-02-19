@@ -343,6 +343,28 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
+        // Global state for loaded data
+        let loadedGeneralMembers = [];
+        let loadedFirstTimers = [];
+
+        // Load data from JSON files
+        async function loadMembersData() {
+            try {
+                const [genResponse, ftResponse] = await Promise.all([
+                    fetch('general_members.json'),
+                    fetch('first_timers_followup.json')
+                ]);
+                
+                if (genResponse.ok) loadedGeneralMembers = await genResponse.json();
+                if (ftResponse.ok) loadedFirstTimers = await ftResponse.json();
+            } catch (error) {
+                console.error('Error loading members data:', error);
+            }
+        }
+
+        // Call on script load
+        loadMembersData();
+
         // Utility: LocalStorage
         const useLocalStorage = (key, initialValue) => {
             const [value, setValue] = useState(() => {
@@ -466,9 +488,11 @@
         function Sidebar({ currentPage, setCurrentPage, user, onLogout }) {
             const menuItems = [
                 { id: 'dashboard', label: 'Dashboard', icon: '🏠' },
-                { id: 'members', label: 'Members', icon: '👥' },
+                { id: 'generalMembers', label: 'All Members', icon: '👥' },
+                { id: 'firstTimers', label: 'First Timers', icon: '🆕' },
                 { id: 'cellChurches', label: 'Cell Churches', icon: '⛪' },
                 { id: 'attendance', label: 'Attendance', icon: '📝' },
+                { id: 'attendanceFilter', label: 'Bulk Attendance', icon: '📋' },
                 { id: 'attendanceUpload', label: 'Upload Attendance', icon: '📤' },
                 { id: 'departments', label: 'Departments', icon: '🏷️' },
                 { id: 'analytics', label: 'Analytics', icon: '📊' },
@@ -1109,6 +1133,343 @@
             );
         }
 
+        // First Timers Follow-up Component
+        function FirstTimerFollowupPage({ firstTimers }) {
+            const [search, setSearch] = useState('');
+            const [filtered, setFiltered] = useState(firstTimers);
+
+            useEffect(() => {
+                setFiltered(firstTimers.filter(ft => 
+                    ft.name.toLowerCase().includes(search.toLowerCase()) ||
+                    (ft.phone && ft.phone.includes(search)) ||
+                    (ft.prayer_request && ft.prayer_request.toLowerCase().includes(search.toLowerCase()))
+                ));
+            }, [search, firstTimers]);
+
+            return (
+                <div>
+                    <div className="page-header">
+                        <h1 className="page-title">First Timers Follow-up ({firstTimers.length})</h1>
+                        <button className="btn btn-primary" onClick={() => exportToExcel(firstTimers, 'FirstTimers')}>
+                            📥 Export Excel
+                        </button>
+                    </div>
+
+                    <div className="search-container">
+                        <input
+                            type="text"
+                            className="form-input search-input"
+                            placeholder="🔍 Search by name, phone, or prayer request..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                    </div>
+
+                    <div className="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th width="20%">Name</th>
+                                    <th width="12%">Phone</th>
+                                    <th width="15%">Gender</th>
+                                    <th width="15%">Marital Status</th>
+                                    <th width="25%">Prayer Request</th>
+                                    <th width="13%">Invited By</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filtered.map(ft => (
+                                    <tr key={ft.id}>
+                                        <td><strong>{ft.name}</strong></td>
+                                        <td style={{fontSize: '12px'}}>{ft.phone || '-'}</td>
+                                        <td>{ft.gender || '-'}</td>
+                                        <td>{ft.marital_status || '-'}</td>
+                                        <td style={{fontSize: '12px'}}>{ft.prayer_request || '-'}</td>
+                                        <td style={{fontSize: '12px'}}>{ft.invited_by || '-'}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        {filtered.length === 0 && <div className="empty-state">No first timers found</div>}
+                    </div>
+                </div>
+            );
+        }
+
+        // General Members Component
+        function GeneralMembersPage({ members }) {
+            const [search, setSearch] = useState('');
+            const [selectedDept, setSelectedDept] = useState('');
+            const [filtered, setFiltered] = useState(members);
+
+            const depts = [...new Set(members.map(m => m.department))].filter(d => d && d !== 'Unassigned').sort();
+
+            useEffect(() => {
+                let result = members.filter(m => 
+                    m.status === 'member' &&
+                    (m.name.toLowerCase().includes(search.toLowerCase()) ||
+                    (m.phone && m.phone.includes(search)))
+                );
+                
+                if (selectedDept) {
+                    result = result.filter(m => m.department === selectedDept);
+                }
+                
+                setFiltered(result);
+            }, [search, selectedDept, members]);
+
+            return (
+                <div>
+                    <div className="page-header">
+                        <h1 className="page-title">General Members ({members.filter(m => m.status === 'member').length})</h1>
+                        <button className="btn btn-primary" onClick={() => exportToExcel(members, 'GeneralMembers')}>
+                            📥 Export Excel
+                        </button>
+                    </div>
+
+                    <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px'}}>
+                        <input
+                            type="text"
+                            className="form-input"
+                            placeholder="🔍 Search by name or phone..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                        <select
+                            className="form-select"
+                            value={selectedDept}
+                            onChange={(e) => setSelectedDept(e.target.value)}
+                        >
+                            <option value="">All Departments</option>
+                            {depts.map(dept => (
+                                <option key={dept} value={dept}>{dept}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    <div className="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th width="25%">Name</th>
+                                    <th width="15%">Phone</th>
+                                    <th width="15%">Gender</th>
+                                    <th width="30%">Department</th>
+                                    <th width="15%">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filtered.map(member => (
+                                    <tr key={member.id}>
+                                        <td><strong>{member.name}</strong></td>
+                                        <td style={{fontSize: '12px'}}>{member.phone || '-'}</td>
+                                        <td>{member.gender || '-'}</td>
+                                        <td>{member.department || 'Unassigned'}</td>
+                                        <td>
+                                            <span className="badge badge-success">Member</span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        {filtered.length === 0 && <div className="empty-state">No members found</div>}
+                    </div>
+                </div>
+            );
+        }
+
+        // Attendance Filter with Bulk Marking Component
+        function AttendanceFilterPage({ members, attendance, setAttendance, user }) {
+            const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+            const [selectedDept, setSelectedDept] = useState(user && user.role !== 'admin' ? user.dept : '');
+            const [pastedNames, setPastedNames] = useState('');
+            const [markingResult, setMarkingResult] = useState(null);
+
+            const depts = window.DEPARTMENTS ? Object.keys(window.DEPARTMENTS).filter(k => k !== 'admin') : [];
+            const attendanceForDate = attendance.filter(a => a.date === date && a.department === selectedDept);
+            
+            const handleAutoBulkMark = () => {
+                if (!pastedNames.trim()) {
+                    alert('Please paste member names');
+                    return;
+                }
+
+                if (!selectedDept) {
+                    alert('Please select a department');
+                    return;
+                }
+
+                const names = pastedNames.split('\n')
+                    .map(n => n.trim().toUpperCase())
+                    .filter(n => n.length > 0);
+
+                if (names.length === 0) {
+                    alert('No valid names found');
+                    return;
+                }
+
+                // Find members in selected dept
+                const deptMembers = members.filter(m => m.department === selectedDept && m.status === 'member');
+                
+                // Find who attended (matched names)
+                const present = deptMembers.filter(m => 
+                    names.some(n => m.name.toUpperCase().includes(n) || n.includes(m.name.toUpperCase()))
+                );
+
+                // Find who didn't attend (not in pasted list)
+                const absent = deptMembers.filter(m => 
+                    !names.some(n => m.name.toUpperCase().includes(n) || n.includes(m.name.toUpperCase()))
+                );
+
+                // Clear existing records for this date/dept
+                let updatedAttendance = attendance.filter(a => !(a.date === date && a.department === selectedDept));
+
+                // Add present members
+                present.forEach(member => {
+                    updatedAttendance.push({
+                        id: Math.random(),
+                        member_id: member.id,
+                        member_name: member.name,
+                        department: member.department,
+                        date: date,
+                        status: 'present',
+                        timestamp: new Date().toISOString()
+                    });
+                });
+
+                // Add absent members
+                absent.forEach(member => {
+                    updatedAttendance.push({
+                        id: Math.random(),
+                        member_id: member.id,
+                        member_name: member.name,
+                        department: member.department,
+                        date: date,
+                        status: 'absent',
+                        timestamp: new Date().toISOString()
+                    });
+                });
+
+                setAttendance(updatedAttendance);
+                setMarkingResult({
+                    present: present.length,
+                    absent: absent.length,
+                    total: deptMembers.length,
+                    date: date,
+                    dept: selectedDept
+                });
+                
+                setPastedNames('');
+            };
+
+            return (
+                <div>
+                    <div className="page-header">
+                        <h1 className="page-title">Record Attendance - Bulk Import</h1>
+                    </div>
+
+                    <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '25px'}}>
+                        <div>
+                            <label className="form-label">Service Date</label>
+                            <input type="date" className="form-input" value={date} onChange={e => setDate(e.target.value)} />
+                        </div>
+                        <div>
+                            <label className="form-label">Department *</label>
+                            <select 
+                                className="form-select" 
+                                value={selectedDept}
+                                onChange={e => setSelectedDept(e.target.value)}
+                                disabled={user && user.role !== 'admin'}
+                            >
+                                <option value="">-- Select Department --</option>
+                                {depts.map(dept => (
+                                    <option key={dept} value={dept}>{window.DEPARTMENTS[dept].description}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="table-container" style={{padding: '20px', marginBottom: '25px'}}>
+                        <div style={{marginBottom: '15px', background: '#f0f8ff', padding: '15px', borderRadius: '8px', borderLeft: '4px solid #4169E1'}}>
+                            <h3 style={{color: '#2E4A9E', marginBottom: '10px'}}>📋 Paste Member Names</h3>
+                            <p style={{color: '#666', fontSize: '13px', marginBottom: '10px'}}>Paste names (one per line or comma-separated). Names NOT in this list will be marked <strong>ABSENT</strong>.</p>
+                            <textarea 
+                                className="form-textarea"
+                                rows={8}
+                                placeholder="e.g.,&#10;REV. DR. OSAZE GREAT-ZION&#10;REV. MRS. EDOSA GREAT-ZION&#10;PST. RALPH&#10;..."
+                                value={pastedNames}
+                                onChange={e => setPastedNames(e.target.value)}
+                                style={{fontFamily: 'monospace'}}
+                            />
+                            <button 
+                                className="btn btn-success"
+                                style={{marginTop: '10px', width: '100%', justifyContent: 'center'}}
+                                onClick={handleAutoBulkMark}
+                            >
+                                ✓ Auto-Mark Attendance
+                            </button>
+                        </div>
+
+                        {markingResult && (
+                            <div style={{background: '#e8f5e9', padding: '15px', borderRadius: '8px', borderLeft: '4px solid #28a745', marginBottom: '15px'}}>
+                                <div style={{color: '#28a745', fontWeight: '700', marginBottom: '10px'}}>✓ Attendance Marked Successfully</div>
+                                <div style={{display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', fontSize: '13px'}}>
+                                    <div><strong>{markingResult.present}</strong> <br/> Present</div>
+                                    <div><strong>{markingResult.absent}</strong> <br/> Absent</div>
+                                    <div><strong>{markingResult.total}</strong> <br/> Total in Dept</div>
+                                    <div><strong>{markingResult.dept}</strong> <br/> Department</div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px'}}>
+                        <div className="table-container" style={{padding: '20px'}}>
+                            <div style={{fontSize: '14px', fontWeight: '600', color: '#28a745', marginBottom: '15px'}}>
+                                ✓ Present ({attendanceForDate.filter(a => a.status !== 'absent').length})
+                            </div>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {attendanceForDate.filter(a => a.status !== 'absent').slice(0, 30).map(record => (
+                                        <tr key={record.id}>
+                                            <td><strong>{record.member_name}</strong></td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            {attendanceForDate.filter(a => a.status !== 'absent').length === 0 && <div className="empty-state">No attendance for this date/dept</div>}
+                        </div>
+
+                        <div className="table-container" style={{padding: '20px'}}>
+                            <div style={{fontSize: '14px', fontWeight: '600', color: '#dc3545', marginBottom: '15px'}}>
+                                ✗ Absent ({attendanceForDate.filter(a => a.status === 'absent').length})
+                            </div>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {attendanceForDate.filter(a => a.status === 'absent').slice(0, 30).map(record => (
+                                        <tr key={record.id}>
+                                            <td><strong>{record.member_name}</strong></td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            {attendanceForDate.filter(a => a.status === 'absent').length === 0 && <div className="empty-state">No absent members</div>}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
         // Analytics Component
         function AnalyticsPage({ members, attendance }) {
             const deptStats = {};
@@ -1175,9 +1536,24 @@
         function App() {
             const [user, setUser] = useState(null);
             const [currentPage, setCurrentPage] = useState('dashboard');
-            const [members, setMembers] = useLocalStorage('src_members_v2', window.MEMBERS || []);
+            const [membersLoaded, setMembersLoaded] = useState(false);
+            
+            // Merge loaded JSON data with window.MEMBERS as fallback
+            const initialMembers = [...loadedGeneralMembers, ...loadedFirstTimers].length > 0 
+                ? [...loadedGeneralMembers, ...loadedFirstTimers]
+                : (window.MEMBERS || []);
+            
+            const [members, setMembers] = useLocalStorage('src_members_v2', initialMembers);
             const [cellChurches, setCellChurches] = useLocalStorage('src_cell_churches', []);
             const [attendance, setAttendance] = useLocalStorage('src_attendance_v2', []);
+
+            // Update members when JSON data loads
+            useEffect(() => {
+                if (loadedGeneralMembers.length > 0 || loadedFirstTimers.length > 0) {
+                    setMembers([...loadedGeneralMembers, ...loadedFirstTimers]);
+                    setMembersLoaded(true);
+                }
+            }, []);
 
             // Filter members based on user role
             const displayMembers = user && user.role !== 'admin' 
@@ -1200,14 +1576,20 @@
                         {currentPage === 'dashboard' && (
                             <Dashboard members={displayMembers} attendance={attendance} />
                         )}
-                        {currentPage === 'members' && (
-                            <MembersPage members={displayMembers} />
+                        {currentPage === 'generalMembers' && (
+                            <GeneralMembersPage members={displayMembers} />
+                        )}
+                        {currentPage === 'firstTimers' && (
+                            <FirstTimerFollowupPage firstTimers={members.filter(m => m.status === 'first_timer')} />
                         )}
                         {currentPage === 'cellChurches' && (
                             <CellChurchesPage cellChurches={cellChurches} setCellChurches={setCellChurches} members={displayMembers} allMembers={members} setMembers={setMembers} user={user} />
                         )}
                         {currentPage === 'attendance' && (
                             <AttendancePage members={displayMembers} attendance={attendance} setAttendance={setAttendance} />
+                        )}
+                        {currentPage === 'attendanceFilter' && (
+                            <AttendanceFilterPage members={displayMembers} attendance={attendance} setAttendance={setAttendance} user={user} />
                         )}
                         {currentPage === 'attendanceUpload' && (
                             <AttendanceUploadPage members={displayMembers} attendance={attendance} setAttendance={setAttendance} />
