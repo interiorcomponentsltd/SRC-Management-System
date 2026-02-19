@@ -1232,8 +1232,12 @@
                 const preview = Object.entries(counts).map(([k,v]) => `${k}: ${v}`).join('\n');
                 if (!confirm(`Apply the following suggestions?\n\n${preview}\n\nThis will update member department fields.`)) return;
                 const assignMap = toAssign.reduce((acc, cur) => { acc[cur.id] = cur.suggested; return acc; }, {});
+                // record changes
+                const changes = unmapped.map(m => ({ id: m.id, from: m.department || '', to: assignMap[m.id] || m.department })).filter(c => c.to && c.to !== c.from);
+                if (changes.length === 0) { alert('No changes to apply'); return; }
                 setMembers(prev => prev.map(m => (assignMap[m.id] ? { ...m, department: assignMap[m.id] } : m)));
-                alert(`Applied ${toAssign.length} suggested mappings`);
+                pushHistory({ action: 'applySuggestions', ts: Date.now(), changes });
+                alert(`Applied ${changes.length} suggested mappings`);
             };
 
             // Initial assignments prefilled with suggestions
@@ -1245,6 +1249,27 @@
 
             const [selection, setSelection] = useState({}); // id -> boolean
             const [assignments, setAssignments] = useState(initialAssignments); // id -> department
+            const [history, setHistory] = useState(() => {
+                try { return JSON.parse(window.localStorage.getItem('mapping_history') || '[]'); } catch { return []; }
+            });
+
+            const pushHistory = (entry) => {
+                const next = [...history, entry];
+                setHistory(next);
+                try { window.localStorage.setItem('mapping_history', JSON.stringify(next)); } catch (e) {}
+            };
+
+            const undoLast = () => {
+                if (!history || history.length === 0) { alert('No mapping history to undo'); return; }
+                const last = history[history.length - 1];
+                if (!confirm(`Undo last mapping action (${last.action}) performed on ${new Date(last.ts).toLocaleString()}?`)) return;
+                const revertMap = last.changes.reduce((acc, c) => { acc[c.id] = c.from; return acc; }, {});
+                setMembers(prev => prev.map(m => ({ ...m, department: (revertMap[m.id] !== undefined) ? revertMap[m.id] : m.department } )));
+                const nextHist = history.slice(0, -1);
+                setHistory(nextHist);
+                try { window.localStorage.setItem('mapping_history', JSON.stringify(nextHist)); } catch (e) {}
+                alert('Undo complete');
+            };
 
             const toggleSelect = (id) => setSelection(prev => ({ ...prev, [id]: !prev[id] }));
             const setAssign = (id, dept) => setAssignments(prev => ({ ...prev, [id]: dept }));
@@ -1252,14 +1277,21 @@
             const applySelected = () => {
                 const toApply = Object.keys(selection).filter(id => selection[id] && assignments[id]);
                 if (toApply.length === 0) { alert('Select members and choose a department for them'); return; }
+                // build change list
+                const membersMap = {};
+                members.forEach(m => { membersMap[m.id] = m; });
+                const changes = toApply.map(id => ({ id: Number(id), from: (membersMap[id] && membersMap[id].department) || '', to: assignments[id] }));
                 setMembers(prev => prev.map(m => (toApply.includes(String(m.id)) ? { ...m, department: assignments[m.id] } : m)));
+                pushHistory({ action: 'applySelected', ts: Date.now(), changes });
                 alert(`Assigned ${toApply.length} members`);
                 setSelection({}); setAssignments({});
             };
 
             const assignAllTo = (dept) => {
                 if (!dept) return; if (!confirm(`Assign all ${unmapped.length} unmapped members to ${dept}?`)) return;
+                const changes = unmapped.map(m => ({ id: m.id, from: m.department || '', to: dept }));
                 setMembers(prev => prev.map(m => (!canonical.includes(m.department) ? { ...m, department: dept } : m)));
+                pushHistory({ action: 'assignAll', ts: Date.now(), changes });
                 alert('Assigned all unmapped members');
             };
 
@@ -1316,6 +1348,18 @@
 
                         <div style={{padding: 15, display:'flex', gap:10}}>
                             <button className="btn btn-success" onClick={applySelected}>Apply Selected</button>
+                            <button className="btn btn-warning" onClick={undoLast}>Undo Last Mapping</button>
+                        </div>
+
+                        <div style={{padding: 15}}>
+                            <div style={{fontWeight:600, marginBottom:8}}>Mapping History</div>
+                            {(history || []).length === 0 && <div className="empty-state">No mapping actions yet</div>}
+                            {(history || []).slice().reverse().map((h, idx) => (
+                                <div key={idx} style={{padding:8, borderBottom:'1px solid #eee'}}>
+                                    <div style={{fontSize:13, fontWeight:700}}>{h.action} • {new Date(h.ts).toLocaleString()}</div>
+                                    <div style={{fontSize:12, color:'#444'}}>{h.changes.length} changes</div>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </div>
