@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spirit Realm Centre - Management System</title>
+    <title>Spirit Realm Centre - Management System v2.0</title>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -14,212 +14,171 @@
     <script src="app_data.js"></script>
     
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
         }
 
-        .app-container {
-            display: flex;
-            min-height: 100vh;
-        }
-
+        .app-container { display: flex; min-height: 100vh; }
+        
         /* Sidebar */
         .sidebar {
             width: 280px;
             background: linear-gradient(180deg, #4169E1 0%, #2E4A9E 100%);
             color: white;
-            padding: 0;
             box-shadow: 4px 0 10px rgba(0,0,0,0.1);
             position: fixed;
             height: 100vh;
             overflow-y: auto;
+            z-index: 1000;
         }
 
         .logo-section {
-            padding: 30px 20px;
+            padding: 20px;
             text-align: center;
             background: rgba(0,0,0,0.2);
             border-bottom: 2px solid #87CEEB;
         }
 
         .logo-img {
-            width: 100px;
-            height: 100px;
+            width: 80px;
+            height: 80px;
             border-radius: 50%;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             border: 3px solid #87CEEB;
             object-fit: cover;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
 
         .logo-section h1 {
-            font-size: 18px;
+            font-size: 16px;
             margin-bottom: 5px;
             color: #FFFFE0;
         }
 
-        .logo-section p {
-            font-size: 12px;
-            color: #87CEEB;
-        }
-
         .nav-menu {
             list-style: none;
-            padding: 20px 0;
+            padding: 15px 0;
         }
 
         .nav-item {
-            padding: 15px 25px;
+            padding: 12px 20px;
             cursor: pointer;
             transition: all 0.3s;
             border-left: 4px solid transparent;
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
+            font-size: 13px;
         }
 
-        .nav-item:hover {
-            background: rgba(135, 206, 235, 0.2);
-            border-left-color: #87CEEB;
-        }
-
-        .nav-item.active {
-            background: rgba(135, 206, 235, 0.3);
-            border-left-color: #FFFFE0;
-            font-weight: bold;
-        }
-
+        .nav-item:hover { background: rgba(135, 206, 235, 0.2); border-left-color: #87CEEB; }
+        .nav-item.active { background: rgba(135, 206, 235, 0.3); border-left-color: #FFFFE0; font-weight: bold; }
+        
         /* Main Content */
         .main-content {
             margin-left: 280px;
             flex: 1;
-            padding: 30px;
-            width: calc(100% - 280px);
+            padding: 20px;
         }
 
         .page-header {
             background: white;
-            padding: 25px 30px;
-            border-radius: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 30px;
+            padding: 20px 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 25px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
-        .page-title {
-            font-size: 28px;
-            color: #2E4A9E;
-        }
+        .page-title { font-size: 24px; color: #2E4A9E; font-weight: 600; }
 
+        /* Stats Grid */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
         }
 
         .stat-card {
             background: white;
-            padding: 25px;
-            border-radius: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             border-left: 5px solid #4169E1;
             transition: transform 0.3s;
         }
 
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .stat-value {
-            font-size: 36px;
-            font-weight: bold;
-            color: #2E4A9E;
-            margin: 10px 0;
-        }
-
-        .stat-label {
-            color: #666;
-            font-size: 14px;
-            text-transform: uppercase;
-        }
+        .stat-card:hover { transform: translateY(-3px); }
+        .stat-value { font-size: 32px; font-weight: 700; color: #2E4A9E; margin: 8px 0; }
+        .stat-label { color: #666; font-size: 12px; text-transform: uppercase; }
 
         /* Tables */
         .table-container {
             background: white;
-            border-radius: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             overflow: hidden;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        thead {
-            background: #f8f9fa;
-        }
-
+        table { width: 100%; border-collapse: collapse; }
+        thead { background: #f8f9fa; }
         th {
-            padding: 15px;
+            padding: 12px 15px;
             text-align: left;
             font-weight: 600;
             color: #2E4A9E;
-            font-size: 12px;
+            font-size: 11px;
             text-transform: uppercase;
         }
-
         td {
-            padding: 15px;
+            padding: 12px 15px;
             border-bottom: 1px solid #f0f0f0;
         }
-
-        tbody tr:hover {
-            background: #f8f9fa;
-        }
+        tbody tr:hover { background: #f8f9fa; }
 
         /* Buttons */
         .btn {
-            padding: 12px 30px;
+            padding: 10px 20px;
             border: none;
-            border-radius: 8px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
 
-        .btn-primary {
-            background: #4169E1;
-            color: white;
-        }
+        .btn-primary { background: #4169E1; color: white; }
+        .btn-primary:hover { background: #2E4A9E; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-sm { padding: 6px 12px; font-size: 11px; }
 
-        .btn-primary:hover {
-            background: #2E4A9E;
+        /* Forms */
+        .form-group { margin-bottom: 15px; }
+        .form-label { display: block; margin-bottom: 5px; font-weight: 600; color: #333; font-size: 12px; }
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+            font-family: inherit;
         }
-
-        .badge {
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #4169E1;
+            box-shadow: 0 0 0 3px rgba(65, 105, 225, 0.1);
         }
-
-        .badge-success { background: #d4edda; color: #155724; }
-        .badge-warning { background: #fff3cd; color: #856404; }
-        .badge-info { background: #d1ecf1; color: #0c5460; }
 
         /* Login */
         .login-container {
@@ -233,58 +192,101 @@
         .login-box {
             background: white;
             padding: 40px;
-            border-radius: 20px;
+            border-radius: 15px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            width: 400px;
-            text-align: center;
+            width: 100%;
+            max-width: 420px;
         }
 
-        .login-logo {
-            width: 120px;
-            height: 120px;
+        .login-logo-img {
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
             margin: 0 auto 20px;
             border: 4px solid #4169E1;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            font-size: 14px;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: #4169E1;
+            object-fit: cover;
         }
 
         .alert {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            font-size: 13px;
         }
-
-        .alert-success { background: #d4edda; color: #155724; }
         .alert-danger { background: #f8d7da; color: #721c24; }
+        .alert-success { background: #d4edda; color: #155724; }
+        .alert-info { background: #d1ecf1; color: #0c5460; }
 
-        .empty-state {
-            text-align: center;
-            padding: 60px;
-            color: #999;
+        .badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-warning { background: #fff3cd; color: #856404; }
+        .badge-danger { background: #f8d7da; color: #721c24; }
+        .badge-info { background: #d1ecf1; color: #0c5460; }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
         }
 
-        /* Responsive */
+        .modal {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #2E4A9E;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .empty-state { text-align: center; padding: 40px 20px; color: #999; }
+
+        /* Search Bar */
+        .search-container { margin-bottom: 20px; }
+        .search-input {
+            width: 100%;
+            max-width: 400px;
+        }
+
         @media (max-width: 768px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-            .main-content {
-                margin-left: 0;
-                width: 100%;
-            }
+            .sidebar { width: 0; overflow: hidden; transform: translateX(-280px); }
+            .main-content { margin-left: 0; }
+            .page-header { flex-direction: column; align-items: flex-start; gap: 15px; }
+            .grid-2 { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
@@ -294,17 +296,7 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // Authentication credentials
-        const AUTH_USERS = {
-            'admin': { password: 'SRC2024admin', dept: 'all', role: 'admin' },
-            'ministers': { password: 'SRC2024ministers', dept: 'Ministers', role: 'leader' },
-            'counselors': { password: 'SRC2024counselors', dept: 'Counselors', role: 'leader' },
-            'ushers': { password: 'SRC2024ushers', dept: 'Ushers', role: 'leader' },
-            'media': { password: 'SRC2024media', dept: 'Media Team', role: 'leader' },
-            'security': { password: 'SRC2024security', dept: 'Security', role: 'leader' }
-        };
-
-        // LocalStorage hook
+        // Utility: LocalStorage
         const useLocalStorage = (key, initialValue) => {
             const [value, setValue] = useState(() => {
                 try {
@@ -326,17 +318,18 @@
             return [value, setValue];
         };
 
-        // Utility Functions
+        // Utility: Format date
         const formatDate = (date) => {
             if (!date) return '';
             return new Date(date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
         };
 
+        // Utility: Export to Excel
         const exportToExcel = (data, filename) => {
             const ws = XLSX.utils.json_to_sheet(data);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Sheet1");
-            XLSX.writeFile(wb, `${filename}.xlsx`);
+            XLSX.writeFile(wb, `${filename}_${new Date().getTime()}.xlsx`);
         };
 
         // Login Component
@@ -347,52 +340,72 @@
 
             const handleLogin = (e) => {
                 e.preventDefault();
-                const user = AUTH_USERS[username.toLowerCase()];
+                setError('');
                 
-                if (user && user.password === password) {
-                    onLogin({ username, ...user });
-                } else {
-                    setError('Invalid username or password');
+                // Check admin
+                if (username === 'admin' && password === 'SRC2024admin') {
+                    onLogin({ username: 'admin', dept: 'all', role: 'admin' });
+                    return;
                 }
+
+                // Check departments
+                const dept = DEPARTMENTS ? Object.keys(DEPARTMENTS).find(d => 
+                    username === DEPARTMENTS[d].username && password === DEPARTMENTS[d].password
+                ) : null;
+
+                if (dept && DEPARTMENTS[dept]) {
+                    onLogin({ username, dept, role: 'leader', description: DEPARTMENTS[dept].description });
+                    return;
+                }
+
+                setError('Invalid username or password');
             };
 
             return (
                 <div className="login-container">
                     <div className="login-box">
-                        <img src={window.APP_DATA?.logo || ''} alt="SRC Logo" className="login-logo" />
-                        <h2 style={{marginBottom: '10px', color: '#2E4A9E'}}>Spirit Realm Centre</h2>
-                        <p style={{marginBottom: '30px', color: '#666'}}>Church Management System</p>
+                        <h2 style={{textAlign: 'center', marginBottom: '10px', color: '#2E4A9E'}}>
+                            Spirit Realm Centre
+                        </h2>
+                        <p style={{textAlign: 'center', marginBottom: '30px', color: '#666', fontSize: '13px'}}>
+                            Management System v2.0
+                        </p>
                         
-                        {error && (
-                            <div className="alert alert-danger">
-                                {error}
-                            </div>
-                        )}
+                        {error && <div className="alert alert-danger">{error}</div>}
                         
                         <form onSubmit={handleLogin}>
-                            <input
-                                type="text"
-                                className="form-input"
-                                placeholder="Username"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                required
-                            />
-                            <input
-                                type="password"
-                                className="form-input"
-                                placeholder="Password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                            />
-                            <button type="submit" className="btn btn-primary" style={{width: '100%'}}>
-                                Login
+                            <div className="form-group">
+                                <input
+                                    type="text"
+                                    className="form-input"
+                                    placeholder="Username"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
+                                    required
+                                    autoFocus
+                                />
+                            </div>
+                            <div className="form-group">
+                                <input
+                                    type="password"
+                                    className="form-input"
+                                    placeholder="Password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <button type="submit" className="btn btn-primary" style={{width: '100%', justifyContent: 'center'}}>
+                                Sign In
                             </button>
                         </form>
                         
-                        <div style={{marginTop: '30px', fontSize: '12px', color: '#999'}}>
-                            <strong>Department Leaders:</strong> Use your department username
+                        <div style={{marginTop: '25px', paddingTop: '20px', borderTop: '1px solid #eee', fontSize: '12px'}}>
+                            <strong style={{color: '#2E4A9E'}}>Demo Credentials:</strong>
+                            <div style={{marginTop: '8px', color: '#666', lineHeight: '1.6'}}>
+                                Admin: <code>admin</code> / <code>SRC2024admin</code><br/>
+                                Or use any department username from the app
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -403,8 +416,9 @@
         function Sidebar({ currentPage, setCurrentPage, user, onLogout }) {
             const menuItems = [
                 { id: 'dashboard', icon: '📊', label: 'Dashboard' },
-                { id: 'members', icon: '👥', label: 'All Members' },
-                { id: 'firstTimers', icon: '✨', label: 'First Timers' },
+                { id: 'members', icon: '👥', label: 'Members' },
+                { id: 'addMember', icon: '➕', label: 'Add Member' },
+                { id: 'cellChurches', icon: '🏘️', label: 'Cell Churches' },
                 { id: 'attendance', icon: '✓', label: 'Attendance' },
                 { id: 'departments', icon: '🏢', label: 'Departments' },
                 { id: 'analytics', icon: '📈', label: 'Analytics' },
@@ -413,11 +427,10 @@
             return (
                 <div className="sidebar">
                     <div className="logo-section">
-                        <img src={window.APP_DATA?.logo || ''} alt="Logo" className="logo-img" />
-                        <h1>Spirit Realm Centre</h1>
-                        <p>Management System</p>
-                        <div style={{marginTop: '15px', fontSize: '11px', color: '#FFFFE0'}}>
-                            Logged in as: <strong>{user.username}</strong>
+                        <h1>SRC</h1>
+                        <p style={{fontSize: '11px'}}>Management System</p>
+                        <div style={{marginTop: '12px', fontSize: '10px', color: '#FFFFE0', wordBreak: 'break-word'}}>
+                            <strong>{user.description || user.dept}</strong>
                         </div>
                     </div>
                     <ul className="nav-menu">
@@ -431,46 +444,46 @@
                                 <span>{item.label}</span>
                             </li>
                         ))}
-                        <li 
-                            className="nav-item"
-                            onClick={onLogout}
-                            style={{borderTop: '1px solid rgba(255,255,255,0.2)', marginTop: '20px'}}
-                        >
-                            <span>🚪</span>
-                            <span>Logout</span>
-                        </li>
                     </ul>
+                    <div style={{padding: '15px', borderTop: '1px solid rgba(255,255,255,0.2)'}}>
+                        <button 
+                            onClick={onLogout}
+                            className="btn btn-danger"
+                            style={{width: '100%', justifyContent: 'center', fontSize: '12px'}}
+                        >
+                            🚪 Logout
+                        </button>
+                    </div>
                 </div>
             );
         }
 
         // Dashboard Component
-        function Dashboard({ members, attendance }) {
-            const stats = {
-                total: members.filter(m => m.type !== 'first_timer').length,
-                firstTimers: members.filter(m => m.type === 'first_timer').length,
-                newMembers: members.filter(m => m.type === 'new').length,
-            };
+        function Dashboard({ members, cellChurches, attendance }) {
+            const deptMembers = members.filter(m => m.status !== 'first_timer');
+            const firstTimers = members.filter(m => m.status === 'first_timer');
 
             return (
                 <div>
                     <div className="page-header">
-                        <h1 className="page-title">Dashboard Overview</h1>
-                        <div style={{color: '#666'}}>{formatDate(new Date())}</div>
+                        <div>
+                            <h1 className="page-title">Dashboard</h1>
+                            <p style={{color: '#666', fontSize: '12px'}}>Welcome to Spirit Realm Centre Management System</p>
+                        </div>
                     </div>
 
                     <div className="stats-grid">
                         <div className="stat-card">
                             <div className="stat-label">Total Members</div>
-                            <div className="stat-value">{stats.total}</div>
+                            <div className="stat-value">{deptMembers.length}</div>
                         </div>
                         <div className="stat-card">
                             <div className="stat-label">First Timers</div>
-                            <div className="stat-value">{stats.firstTimers}</div>
+                            <div className="stat-value">{firstTimers.length}</div>
                         </div>
                         <div className="stat-card">
-                            <div className="stat-label">New Members</div>
-                            <div className="stat-value">{stats.newMembers}</div>
+                            <div className="stat-label">Cell Churches</div>
+                            <div className="stat-value">{cellChurches.length}</div>
                         </div>
                         <div className="stat-card">
                             <div className="stat-label">Attendance Records</div>
@@ -479,66 +492,64 @@
                     </div>
 
                     <div className="table-container">
+                        <div style={{padding: '15px 20px', borderBottom: '1px solid #f0f0f0', fontSize: '14px', fontWeight: '600', color: '#2E4A9E'}}>
+                            Recent Members
+                        </div>
                         <table>
                             <thead>
                                 <tr>
                                     <th>Name</th>
                                     <th>Phone</th>
-                                    <th>Type</th>
                                     <th>Department</th>
-                                    <th>Date Joined</th>
+                                    <th>Status</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {members.slice(0, 10).map(member => (
                                     <tr key={member.id}>
                                         <td><strong>{member.name}</strong></td>
-                                        <td>{member.phone}</td>
+                                        <td style={{fontSize: '12px'}}>{member.phone || 'N/A'}</td>
+                                        <td>{member.department}</td>
                                         <td>
-                                            <span className={`badge badge-${
-                                                member.type === 'first_timer' ? 'info' : 
-                                                member.type === 'new' ? 'success' : 'warning'
-                                            }`}>
-                                                {member.type.replace('_', ' ')}
+                                            <span className={`badge badge-${member.status === 'first_timer' ? 'info' : 'success'}`}>
+                                                {member.status === 'first_timer' ? 'First Timer' : 'Member'}
                                             </span>
                                         </td>
-                                        <td>{member.department || 'N/A'}</td>
-                                        <td>{formatDate(member.dateJoined)}</td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
+                        {members.length === 0 && <div className="empty-state">No members yet</div>}
                     </div>
                 </div>
             );
         }
 
-        // Members Page
-        function MembersPage({ members }) {
+        // Members List Component
+        function MembersPage({ members, onEdit, onDelete }) {
             const [search, setSearch] = useState('');
 
             const filtered = members.filter(m => 
                 m.name.toLowerCase().includes(search.toLowerCase()) ||
-                m.phone.includes(search)
+                (m.phone && m.phone.includes(search))
             );
 
             return (
                 <div>
                     <div className="page-header">
-                        <h1 className="page-title">All Members ({members.length})</h1>
-                        <button className="btn btn-primary" onClick={() => exportToExcel(members, 'Members_Export')}>
-                            📥 Export to Excel
+                        <h1 className="page-title">Members ({members.length})</h1>
+                        <button className="btn btn-primary" onClick={() => exportToExcel(members, 'Members')}>
+                            📥 Export Excel
                         </button>
                     </div>
 
-                    <div style={{marginBottom: '20px'}}>
+                    <div className="search-container">
                         <input
                             type="text"
-                            className="form-input"
-                            placeholder="Search by name or phone..."
+                            className="form-input search-input"
+                            placeholder="🔍 Search by name or phone..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            style={{maxWidth: '400px'}}
                         />
                     </div>
 
@@ -546,82 +557,566 @@
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Name</th>
-                                    <th>Phone</th>
-                                    <th>Gender</th>
-                                    <th>Department</th>
-                                    <th>Position</th>
-                                    <th>Date Joined</th>
+                                    <th width="25%">Name</th>
+                                    <th width="15%">Phone</th>
+                                    <th width="20%">Department</th>
+                                    <th width="15%">Gender</th>
+                                    <th width="25%">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {filtered.map(member => (
                                     <tr key={member.id}>
                                         <td><strong>{member.name}</strong></td>
-                                        <td>{member.phone}</td>
-                                        <td>{member.gender}</td>
-                                        <td>{member.department || 'N/A'}</td>
-                                        <td>{member.position && <span className="badge badge-success">{member.position}</span>}</td>
-                                        <td>{formatDate(member.dateJoined)}</td>
+                                        <td style={{fontSize: '12px'}}>{member.phone || '-'}</td>
+                                        <td>{member.department}</td>
+                                        <td>{member.gender || '-'}</td>
+                                        <td>
+                                            <button className="btn btn-sm btn-secondary" onClick={() => onEdit(member)}>
+                                                ✏️ Edit
+                                            </button>
+                                            <button className="btn btn-sm btn-danger" onClick={() => {
+                                                if(confirm('Delete this member?')) onDelete(member.id);
+                                            }} style={{marginLeft: '5px'}}>
+                                                🗑️ Delete
+                                            </button>
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
-                        {filtered.length === 0 && (
-                            <div className="empty-state">
-                                <p>No members found</p>
-                            </div>
-                        )}
+                        {filtered.length === 0 && <div className="empty-state">No members found</div>}
                     </div>
                 </div>
             );
         }
 
-        // Main App Component
+        // Add Member Component
+        function AddMemberPage({ members, setMembers, departments }) {
+            const [formData, setFormData] = useState({
+                name: '',
+                phone: '',
+                gender: '',
+                marital_status: '',
+                address: '',
+                state_of_origin: '',
+                occupation: '',
+                department: '',
+                prayer_request: '',
+                counselor: '',
+                date_joined: new Date().toISOString().split('T')[0],
+                baptism: '',
+                status: 'existing_member'
+            });
+
+            const [message, setMessage] = useState('');
+
+            const handleChange = (e) => {
+                const { name, value } = e.target;
+                setFormData(prev => ({ ...prev, [name]: value }));
+            };
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (!formData.name || !formData.department) {
+                    setMessage('Name and Department are required');
+                    return;
+                }
+
+                const newMember = {
+                    ...formData,
+                    id: Math.max(...members.map(m => m.id || 0), 0) + 1
+                };
+
+                setMembers(prev => [...prev, newMember]);
+                setMessage('Member added successfully!');
+                
+                setTimeout(() => {
+                    setFormData({
+                        name: '', phone: '', gender: '', marital_status: '', address: '',
+                        state_of_origin: '', occupation: '', department: '', 
+                        prayer_request: '', counselor: '', baptism: '',
+                        date_joined: new Date().toISOString().split('T')[0],
+                        status: 'existing_member'
+                    });
+                    setMessage('');
+                }, 2000);
+            };
+
+            const deptList = [...new Set(members.map(m => m.department))].sort();
+
+            return (
+                <div>
+                    <div className="page-header">
+                        <h1 className="page-title">Add New Member</h1>
+                    </div>
+
+                    {message && (
+                        <div className={`alert ${message.includes('successfully') ? 'alert-success' : 'alert-danger'}`}>
+                            {message}
+                        </div>
+                    )}
+
+                    <div className="table-container" style={{padding: '30px'}}>
+                        <form onSubmit={handleSubmit}>
+                            <div className="grid-2">
+                                <div className="form-group">
+                                    <label className="form-label">Full Name *</label>
+                                    <input type="text" name="name" className="form-input" value={formData.name} onChange={handleChange} required />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Phone</label>
+                                    <input type="tel" name="phone" className="form-input" value={formData.phone} onChange={handleChange} />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Gender</label>
+                                    <select name="gender" className="form-select" value={formData.gender} onChange={handleChange}>
+                                        <option value="">Select</option>
+                                        <option value="MALE">Male</option>
+                                        <option value="FEMALE">Female</option>
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Marital Status</label>
+                                    <select name="marital_status" className="form-select" value={formData.marital_status} onChange={handleChange}>
+                                        <option value="">Select</option>
+                                        <option value="Single">Single</option>
+                                        <option value="Married">Married</option>
+                                        <option value="Widowed">Widowed</option>
+                                        <option value="Divorced">Divorced</option>
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Address</label>
+                                    <input type="text" name="address" className="form-input" value={formData.address} onChange={handleChange} />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">State of Origin</label>
+                                    <input type="text" name="state_of_origin" className="form-input" value={formData.state_of_origin} onChange={handleChange} />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Occupation</label>
+                                    <input type="text" name="occupation" className="form-input" value={formData.occupation} onChange={handleChange} />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Department *</label>
+                                    <select name="department" className="form-select" value={formData.department} onChange={handleChange} required>
+                                        <option value="">Select Department</option>
+                                        {deptList.map(dept => <option key={dept} value={dept}>{dept}</option>)}
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Status</label>
+                                    <select name="status" className="form-select" value={formData.status} onChange={handleChange}>
+                                        <option value="existing_member">Existing Member</option>
+                                        <option value="first_timer">First Timer</option>
+                                    </select>
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Date Joined</label>
+                                    <input type="date" name="date_joined" className="form-input" value={formData.date_joined} onChange={handleChange} />
+                                </div>
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label">Prayer Request</label>
+                                <textarea name="prayer_request" className="form-textarea" rows="3" value={formData.prayer_request} onChange={handleChange}></textarea>
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label">Counselor</label>
+                                <input type="text" name="counselor" className="form-input" value={formData.counselor} onChange={handleChange} />
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label">Baptism Status</label>
+                                <select name="baptism" className="form-select" value={formData.baptism} onChange={handleChange}>
+                                    <option value="">Select</option>
+                                    <option value="Yes">Yes</option>
+                                    <option value="No">No</option>
+                                </select>
+                            </div>
+
+                            <button type="submit" className="btn btn-primary" style={{marginTop: '20px'}}>
+                                ➕ Add Member
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            );
+        }
+
+        // Cell Churches Component
+        function CellChurchesPage({ cellChurches, setCellChurches, members }) {
+            const [showModal, setShowModal] = useState(false);
+            const [formData, setFormData] = useState({ name: '', location: '', leader: '', meeting_day: '', meeting_time: '' });
+
+            const handleAdd = () => {
+                if (!formData.name || !formData.location) {
+                    alert('Name and Location are required');
+                    return;
+                }
+
+                const newGroup = {
+                    ...formData,
+                    id: Math.max(...cellChurches.map(c => c.id || 0), 0) + 1,
+                    members: []
+                };
+
+                setCellChurches(prev => [...prev, newGroup]);
+                setFormData({ name: '', location: '', leader: '', meeting_day: '', meeting_time: '' });
+                setShowModal(false);
+            };
+
+            const handleDelete = (id) => {
+                if (confirm('Delete this cell church group?')) {
+                    setCellChurches(prev => prev.filter(c => c.id !== id));
+                }
+            };
+
+            return (
+                <div>
+                    <div className="page-header">
+                        <h1 className="page-title">Cell Churches ({cellChurches.length})</h1>
+                        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+                            ➕ New Group
+                        </button>
+                    </div>
+
+                    {showModal && (
+                        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+                            <div className="modal" onClick={e => e.stopPropagation()}>
+                                <div className="modal-header">
+                                    Create Cell Church Group
+                                    <button className="modal-close" onClick={() => setShowModal(false)}>✕</button>
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">Group Name *</label>
+                                    <input type="text" className="form-input" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">Location *</label>
+                                    <input type="text" className="form-input" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} />
+                                </div>
+
+                                <div className="grid-2">
+                                    <div className="form-group">
+                                        <label className="form-label">Group Leader</label>
+                                        <select className="form-select" value={formData.leader} onChange={e => setFormData({...formData, leader: e.target.value})}>
+                                            <option value="">Select Leader</option>
+                                            {members.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
+                                        </select>
+                                    </div>
+
+                                    <div className="form-group">
+                                        <label className="form-label">Meeting Day</label>
+                                        <select className="form-select" value={formData.meeting_day} onChange={e => setFormData({...formData, meeting_day: e.target.value})}>
+                                            <option value="">Select Day</option>
+                                            {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(d => <option key={d} value={d}>{d}</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="form-group">
+                                    <label className="form-label">Meeting Time</label>
+                                    <input type="time" className="form-input" value={formData.meeting_time} onChange={e => setFormData({...formData, meeting_time: e.target.value})} />
+                                </div>
+
+                                <button className="btn btn-success" onClick={handleAdd} style={{width: '100%', justifyContent: 'center', marginTop: '20px'}}>
+                                    Create Group
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px'}}>
+                        {cellChurches.map(group => (
+                            <div key={group.id} className="table-container" style={{padding: '20px'}}>
+                                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '15px'}}>
+                                    <div>
+                                        <div style={{fontSize: '16px', fontWeight: '700', color: '#2E4A9E'}}>{group.name}</div>
+                                        <div style={{fontSize: '12px', color: '#666', marginTop: '5px'}}>📍 {group.location}</div>
+                                    </div>
+                                    <button className="btn btn-danger btn-sm" onClick={() => handleDelete(group.id)}>🗑️</button>
+                                </div>
+
+                                <div style={{fontSize: '12px', color: '#666', lineHeight: '1.6'}}>
+                                    <div><strong>Leader:</strong> {group.leader || 'Not assigned'}</div>
+                                    <div><strong>Meeting:</strong> {group.meeting_day} @ {group.meeting_time || 'TBD'}</div>
+                                    <div><strong>Members:</strong> {group.members?.length || 0}</div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {cellChurches.length === 0 && <div className="empty-state">No cell churches yet. Create your first group!</div>}
+                </div>
+            );
+        }
+
+        // Attendance Component
+        function AttendancePage({ members, attendance, setAttendance }) {
+            const [recordDate, setRecordDate] = useState(new Date().toISOString().split('T')[0]);
+            const [selectedMembers, setSelectedMembers] = useState([]);
+
+            const handleToggleMember = (memberId) => {
+                setSelectedMembers(prev => 
+                    prev.includes(memberId) 
+                        ? prev.filter(id => id !== memberId)
+                        : [...prev, memberId]
+                );
+            };
+
+            const handleRecordAttendance = () => {
+                if (selectedMembers.length === 0) {
+                    alert('Select at least one member');
+                    return;
+                }
+
+                selectedMembers.forEach(memberId => {
+                    const member = members.find(m => m.id === memberId);
+                    if (member) {
+                        setAttendance(prev => [...prev, {
+                            id: Math.random(),
+                            member_id: memberId,
+                            member_name: member.name,
+                            department: member.department,
+                            date: recordDate,
+                            timestamp: new Date().toISOString()
+                        }]);
+                    }
+                });
+
+                alert('Attendance recorded successfully!');
+                setSelectedMembers([]);
+                setRecordDate(new Date().toISOString().split('T')[0]);
+            };
+
+            const todayAttendance = attendance.filter(a => a.date === recordDate);
+
+            return (
+                <div>
+                    <div className="page-header">
+                        <h1 className="page-title">Attendance Tracking</h1>
+                    </div>
+
+                    <div className="table-container" style={{padding: '20px', marginBottom: '25px'}}>
+                        <div style={{marginBottom: '20px'}}>
+                            <label className="form-label">Record Date</label>
+                            <input type="date" className="form-input" value={recordDate} onChange={e => setRecordDate(e.target.value)} style={{maxWidth: '300px'}} />
+                        </div>
+
+                        <div style={{marginBottom: '15px'}}>
+                            <div style={{fontSize: '13px', color: '#2E4A9E', fontWeight: '600', marginBottom: '10px'}}>
+                                Present Today: {selectedMembers.length}
+                            </div>
+                            <button className="btn btn-success" onClick={handleRecordAttendance} disabled={selectedMembers.length === 0}>
+                                ✓ Record Attendance
+                            </button>
+                        </div>
+
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th width="5%">Select</th>
+                                    <th width="40%">Name</th>
+                                    <th width="30%">Department</th>
+                                    <th width="25%">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {members.map(member => {
+                                    const isSelected = selectedMembers.includes(member.id);
+                                    return (
+                                        <tr key={member.id} onClick={() => handleToggleMember(member.id)} style={{cursor: 'pointer', background: isSelected ? '#f0f8ff' : 'white'}}>
+                                            <td>
+                                                <input type="checkbox" checked={isSelected} onChange={() => {}} />
+                                            </td>
+                                            <td><strong>{member.name}</strong></td>
+                                            <td>{member.department}</td>
+                                            <td>
+                                                <span className={`badge ${isSelected ? 'badge-success' : 'badge-warning'}`}>
+                                                    {isSelected ? '✓ Present' : '⃝ Absent'}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div className="table-container">
+                        <div style={{padding: '15px 20px', borderBottom: '1px solid #f0f0f0', fontSize: '14px', fontWeight: '600', color: '#2E4A9E'}}>
+                            Attendance Summary for {recordDate} ({todayAttendance.length})
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Department</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {todayAttendance.map(record => (
+                                    <tr key={record.id}>
+                                        <td><strong>{record.member_name}</strong></td>
+                                        <td>{record.department}</td>
+                                        <td style={{fontSize: '12px'}}>{new Date(record.timestamp).toLocaleTimeString()}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        {todayAttendance.length === 0 && <div className="empty-state">No attendance records for this date</div>}
+                    </div>
+                </div>
+            );
+        }
+
+        // Departments Component
+        function DepartmentsPage() {
+            const deptList = DEPARTMENTS ? Object.entries(DEPARTMENTS).filter(([k, v]) => k !== 'admin') : [];
+
+            return (
+                <div>
+                    <div className="page-header">
+                        <h1 className="page-title">Department Credentials</h1>
+                    </div>
+
+                    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px'}}>
+                        {deptList.map(([key, dept]) => (
+                            <div key={key} className="table-container" style={{padding: '20px'}}>
+                                <div style={{fontSize: '16px', fontWeight: '700', color: '#2E4A9E', marginBottom: '15px'}}>
+                                    {dept.description}
+                                </div>
+                                <div style={{fontSize: '13px', color: '#666', background: '#f8f9fa', padding: '12px', borderRadius: '6px', fontFamily: 'monospace', lineHeight: '1.8'}}>
+                                    <div><strong>Username:</strong> {dept.username}</div>
+                                    <div><strong>Password:</strong> {dept.password}</div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        }
+
+        // Analytics Component
+        function AnalyticsPage({ members, attendance, cellChurches }) {
+            const deptStats = {};
+            members.forEach(m => {
+                deptStats[m.department] = (deptStats[m.department] || 0) + 1;
+            });
+
+            const firstTimers = members.filter(m => m.status === 'first_timer').length;
+            const existingMembers = members.filter(m => m.status !== 'first_timer').length;
+
+            return (
+                <div>
+                    <div className="page-header">
+                        <h1 className="page-title">Analytics & Reports</h1>
+                    </div>
+
+                    <div className="stats-grid">
+                        <div className="stat-card">
+                            <div className="stat-label">Total Members</div>
+                            <div className="stat-value">{members.length}</div>
+                        </div>
+                        <div className="stat-card">
+                            <div className="stat-label">First Timers</div>
+                            <div className="stat-value">{firstTimers}</div>
+                        </div>
+                        <div className="stat-card">
+                            <div className="stat-label">Existing Members</div>
+                            <div className="stat-value">{existingMembers}</div>
+                        </div>
+                        <div className="stat-card">
+                            <div className="stat-label">Attendance Records</div>
+                            <div className="stat-value">{attendance.length}</div>
+                        </div>
+                    </div>
+
+                    <div className="table-container">
+                        <div style={{padding: '15px 20px', fontSize: '14px', fontWeight: '600', color: '#2E4A9E'}}>
+                            Members by Department
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Department</th>
+                                    <th>Count</th>
+                                    <th>Percentage</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {Object.entries(deptStats).sort((a, b) => b[1] - a[1]).map(([dept, count]) => (
+                                    <tr key={dept}>
+                                        <td><strong>{dept}</strong></td>
+                                        <td>{count}</td>
+                                        <td>{((count / members.length) * 100).toFixed(1)}%</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            );
+        }
+
+        // Main App
         function App() {
             const [user, setUser] = useState(null);
             const [currentPage, setCurrentPage] = useState('dashboard');
-            const [members, setMembers] = useLocalStorage('src_members', window.APP_DATA?.members || []);
-            const [attendance, setAttendance] = useLocalStorage('src_attendance', window.APP_DATA?.attendance || []);
+            const [members, setMembers] = useLocalStorage('src_members_v2', window.MEMBERS || []);
+            const [cellChurches, setCellChurches] = useLocalStorage('src_cell_churches', window.CELL_CHURCHES || []);
+            const [attendance, setAttendance] = useLocalStorage('src_attendance_v2', []);
 
-            const handleLogout = () => {
-                setUser(null);
-                setCurrentPage('dashboard');
-            };
+            // Filter members based on user role
+            const displayMembers = user && user.role !== 'admin' 
+                ? members.filter(m => m.department === user.dept)
+                : members;
 
             if (!user) {
                 return <LoginPage onLogin={setUser} />;
             }
 
-            // Filter members by department for non-admin users
-            const filteredMembers = user.role === 'admin' 
-                ? members 
-                : members.filter(m => m.department === user.dept);
-
             return (
                 <div className="app-container">
                     <Sidebar 
-                        currentPage={currentPage} 
+                        currentPage={currentPage}
                         setCurrentPage={setCurrentPage}
                         user={user}
-                        onLogout={handleLogout}
+                        onLogout={() => setUser(null)}
                     />
                     <div className="main-content">
                         {currentPage === 'dashboard' && (
-                            <Dashboard members={filteredMembers} attendance={attendance} />
+                            <Dashboard members={displayMembers} cellChurches={cellChurches} attendance={attendance} />
                         )}
                         {currentPage === 'members' && (
-                            <MembersPage members={filteredMembers} />
+                            <MembersPage members={displayMembers} onEdit={() => {}} onDelete={(id) => setMembers(members.filter(m => m.id !== id))} />
                         )}
-                        {currentPage === 'firstTimers' && (
-                            <MembersPage members={filteredMembers.filter(m => m.type === 'first_timer')} />
+                        {currentPage === 'addMember' && (
+                            <AddMemberPage members={members} setMembers={setMembers} departments={Array.from(new Set(members.map(m => m.department)))} />
+                        )}
+                        {currentPage === 'cellChurches' && (
+                            <CellChurchesPage cellChurches={cellChurches} setCellChurches={setCellChurches} members={displayMembers} />
+                        )}
+                        {currentPage === 'attendance' && (
+                            <AttendancePage members={displayMembers} attendance={attendance} setAttendance={setAttendance} />
+                        )}
+                        {currentPage === 'departments' && (
+                            <DepartmentsPage />
+                        )}
+                        {currentPage === 'analytics' && (
+                            <AnalyticsPage members={displayMembers} attendance={attendance} cellChurches={cellChurches} />
                         )}
                     </div>
                 </div>
             );
         }
 
-        // Render App
         ReactDOM.render(<App />, document.getElementById('root'));
     </script>
 </body>
