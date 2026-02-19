@@ -381,117 +381,108 @@
 
         // Login Component
         function LoginPage({ onLogin }) {
+            const [selectedDept, setSelectedDept] = useState('');
             const [username, setUsername] = useState('');
             const [password, setPassword] = useState('');
             const [error, setError] = useState('');
 
+            const deptList = window.DEPARTMENTS ? Object.entries(window.DEPARTMENTS) : [];
+
             const handleLogin = (e) => {
                 e.preventDefault();
                 setError('');
-                
-                // Check all departments and admin
-                if (window.DEPARTMENTS) {
-                    for (const [deptName, deptInfo] of Object.entries(window.DEPARTMENTS)) {
-                        if (deptInfo.username === username && deptInfo.password === password) {
-                            const isAdmin = deptName === 'admin';
-                            onLogin({
-                                username,
-                                dept: isAdmin ? 'all' : deptName,
-                                role: isAdmin ? 'admin' : 'leader',
-                                description: deptInfo.description
-                            });
-                            return;
-                        }
-                    }
+
+                if (!selectedDept) {
+                    setError('Please select your department');
+                    return;
                 }
 
-                setError('Invalid username or password');
+                const deptInfo = window.DEPARTMENTS && window.DEPARTMENTS[selectedDept];
+                if (deptInfo && deptInfo.username === username && deptInfo.password === password) {
+                    const isAdmin = selectedDept === 'admin';
+                    onLogin({
+                        username,
+                        dept: isAdmin ? 'all' : selectedDept,
+                        role: isAdmin ? 'admin' : 'leader',
+                        description: deptInfo.description
+                    });
+                    return;
+                }
+
+                setError('Invalid username or password for the selected department');
             };
 
             return (
-                // Login Component - department first, then credentials
-                function LoginPage({ onLogin }) {
-                    const [selectedDept, setSelectedDept] = useState('');
-                    const [username, setUsername] = useState('');
-                    const [password, setPassword] = useState('');
-                    const [error, setError] = useState('');
+                <div className="login-container">
+                    <div className="login-box">
+                        <img src="data:image/jpeg;base64,/9j/4Q..." className="login-logo-img" alt="Spirit Realm Centre Logo" title="Spirit Realm Centre" />
+                        <h2 style={{textAlign: 'center', marginBottom: '10px', color: '#2E4A9E'}}>Spirit Realm Centre</h2>
+                        <p style={{textAlign: 'center', marginBottom: '20px', color: '#666', fontSize: '13px'}}>Church Management System v2.0</p>
 
-                    const deptList = window.DEPARTMENTS ? Object.entries(window.DEPARTMENTS) : [];
+                        {error && <div className="alert alert-danger">{error}</div>}
 
-                    const handleLogin = (e) => {
-                        e.preventDefault();
-                        setError('');
-
-                        if (!selectedDept) {
-                            setError('Please select your department');
-                            return;
-                        }
-
-                        const deptInfo = window.DEPARTMENTS && window.DEPARTMENTS[selectedDept];
-                        if (deptInfo && deptInfo.username === username && deptInfo.password === password) {
-                            const isAdmin = selectedDept === 'admin';
-                            onLogin({
-                                username,
-                                dept: isAdmin ? 'all' : selectedDept,
-                                role: isAdmin ? 'admin' : 'leader',
-                                description: deptInfo.description
-                            });
-                            return;
-                        }
-
-                        setError('Invalid username or password for the selected department');
-                    };
-
-                    return (
-                        <div className="login-container">
-                            <div className="login-box">
-                                <img src="data:image/jpeg;base64,/9j/4Q..." className="login-logo-img" alt="Spirit Realm Centre Logo" title="Spirit Realm Centre" />
-                                <h2 style={{textAlign: 'center', marginBottom: '10px', color: '#2E4A9E'}}>Spirit Realm Centre</h2>
-                                <p style={{textAlign: 'center', marginBottom: '20px', color: '#666', fontSize: '13px'}}>Church Management System v2.0</p>
-
-                                {error && <div className="alert alert-danger">{error}</div>}
-
-                                <form onSubmit={handleLogin}>
-                                    <div className="form-group">
-                                        <label className="form-label">Department</label>
-                                        <select className="form-select" value={selectedDept} onChange={e => setSelectedDept(e.target.value)} required>
-                                            <option value="">-- Select Department --</option>
-                                            {deptList.map(([key, dept]) => (
-                                                <option key={key} value={key}>{dept.description || key}</option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div className="form-group">
-                                        <input
-                                            type="text"
-                                            className="form-input"
-                                            placeholder="Username"
-                                            value={username}
-                                            onChange={(e) => setUsername(e.target.value)}
-                                            required
-                                            autoFocus
-                                        />
-                                    </div>
-
-                                    <div className="form-group">
-                                        <input
-                                            type="password"
-                                            className="form-input"
-                                            placeholder="Password"
-                                            value={password}
-                                            onChange={(e) => setPassword(e.target.value)}
-                                            required
-                                        />
-                                    </div>
-
-                                    <button type="submit" className="btn btn-primary" style={{width: '100%', justifyContent: 'center'}}>Sign In</button>
-                                </form>
+                        <form onSubmit={handleLogin}>
+                            <div className="form-group">
+                                <label className="form-label">Department</label>
+                                <select className="form-select" value={selectedDept} onChange={e => setSelectedDept(e.target.value)} required>
+                                    <option value="">-- Select Department --</option>
+                                    {deptList.map(([key, dept]) => (
+                                        <option key={key} value={key}>{dept.description || key}</option>
+                                    ))}
+                                </select>
                             </div>
-                        </div>
-                    );
-                }
+
+                            <div className="form-group">
+                                <input
+                                    type="text"
+                                    className="form-input"
+                                    placeholder="Username"
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
+                                    required
+                                    autoFocus
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <input
+                                    type="password"
+                                    className="form-input"
+                                    placeholder="Password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                />
+                            </div>
+
+                            <button type="submit" className="btn btn-primary" style={{width: '100%', justifyContent: 'center'}}>Sign In</button>
+                        </form>
                     </div>
+                </div>
+            );
+        }
+
+        // Sidebar Component
+        function Sidebar({ currentPage, setCurrentPage, user, onLogout }) {
+            const menuItems = [
+                { id: 'dashboard', label: 'Dashboard', icon: '🏠' },
+                { id: 'members', label: 'Members', icon: '👥' },
+                { id: 'cellChurches', label: 'Cell Churches', icon: '⛪' },
+                { id: 'attendance', label: 'Attendance', icon: '📝' },
+                { id: 'attendanceUpload', label: 'Upload Attendance', icon: '📤' },
+                { id: 'departments', label: 'Departments', icon: '🏷️' },
+                { id: 'analytics', label: 'Analytics', icon: '📊' },
+            ];
+
+            return (
+                <div className="sidebar">
+                    <div className="logo-section">
+                        <img src="data:image/jpeg;base64,/9j/4Q..." className="logo-img" alt="Logo" />
+                        <h1>Spirit Realm Centre</h1>
+                        <p>Management System</p>
+                        <div className="user-info">{user ? `${user.username} • ${user.role}` : 'Not signed in'}</div>
+                    </div>
+
                     <ul className="nav-menu">
                         {menuItems.map(item => (
                             <li 
@@ -504,6 +495,7 @@
                             </li>
                         ))}
                     </ul>
+
                     <div style={{padding: '15px', borderTop: '1px solid rgba(255,255,255,0.2)'}}>
                         <button 
                             onClick={onLogout}
@@ -664,9 +656,11 @@
         }
 
         // Cell Churches Component
-        function CellChurchesPage({ cellChurches, setCellChurches, members }) {
+        function CellChurchesPage({ cellChurches, setCellChurches, members, allMembers, setMembers, user }) {
             const [showModal, setShowModal] = useState(false);
             const [formData, setFormData] = useState({ name: '', location: '', leader: '', meeting_day: '', meeting_time: '' });
+            const [manageGroup, setManageGroup] = useState(null);
+            const [newMemberData, setNewMemberData] = useState({ name: '', phone: '', gender: '', status: 'member' });
 
             const handleAdd = () => {
                 if (!formData.name || !formData.location) {
@@ -691,59 +685,72 @@
                 }
             };
 
+            const openManage = (group) => {
+                setManageGroup(group);
+                setNewMemberData({ name: '', phone: '', gender: '', status: 'member' });
+            };
+
+            const handleAddMemberToGroup = () => {
+                if (!newMemberData.name) {
+                    alert('Member name required');
+                    return;
+                }
+
+                const nextId = Math.max(...(allMembers.map(m => m.id) || [0]), 0) + 1;
+                const newMember = {
+                    id: nextId,
+                    name: newMemberData.name,
+                    phone: newMemberData.phone,
+                    gender: newMemberData.gender,
+                    status: newMemberData.status,
+                    department: user && user.role !== 'admin' ? user.dept : (newMemberData.department || 'Unassigned')
+                };
+
+                setMembers(prev => [...prev, newMember]);
+
+                // Add to group
+                setCellChurches(prev => prev.map(g => g.id === manageGroup.id ? { ...g, members: [...(g.members || []), newMember.id] } : g));
+                setNewMemberData({ name: '', phone: '', gender: '', status: 'member' });
+            };
+
+            const handleRemoveMemberFromGroup = (groupId, memberId) => {
+                setCellChurches(prev => prev.map(g => g.id === groupId ? { ...g, members: (g.members || []).filter(id => id !== memberId) } : g));
+            };
+
             return (
                 <div>
                     <div className="page-header">
                         <h1 className="page-title">Cell Churches ({cellChurches.length})</h1>
-                        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-                            ➕ New Group
-                        </button>
+                        <button className="btn btn-primary" onClick={() => setShowModal(true)}>➕ New Group</button>
                     </div>
 
                     {showModal && (
                         <div className="modal-overlay" onClick={() => setShowModal(false)}>
                             <div className="modal" onClick={e => e.stopPropagation()}>
-                                <div className="modal-header">
-                                    Create Cell Church Group
-                                    <button className="modal-close" onClick={() => setShowModal(false)}>✕</button>
-                                </div>
+                                <div className="modal-header">Create Cell Church Group<button className="modal-close" onClick={() => setShowModal(false)}>✕</button></div>
 
-                                <div className="form-group">
-                                    <label className="form-label">Group Name *</label>
-                                    <input type="text" className="form-input" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
-                                </div>
-
-                                <div className="form-group">
-                                    <label className="form-label">Location *</label>
-                                    <input type="text" className="form-input" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} />
-                                </div>
+                                <div className="form-group"><label className="form-label">Group Name *</label><input type="text" className="form-input" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} /></div>
+                                <div className="form-group"><label className="form-label">Location *</label><input type="text" className="form-input" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} /></div>
 
                                 <div className="grid-2">
-                                    <div className="form-group">
-                                        <label className="form-label">Group Leader</label>
+                                    <div className="form-group"><label className="form-label">Group Leader</label>
                                         <select className="form-select" value={formData.leader} onChange={e => setFormData({...formData, leader: e.target.value})}>
                                             <option value="">Select Leader</option>
                                             {members.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
                                         </select>
                                     </div>
 
-                                    <div className="form-group">
-                                        <label className="form-label">Meeting Day</label>
+                                    <div className="form-group"><label className="form-label">Meeting Day</label>
                                         <select className="form-select" value={formData.meeting_day} onChange={e => setFormData({...formData, meeting_day: e.target.value})}>
                                             <option value="">Select Day</option>
-                                            {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(d => <option key={d} value={d}>{d}</option>)}
+                                            {['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].map(d => <option key={d} value={d}>{d}</option>)}
                                         </select>
                                     </div>
                                 </div>
 
-                                <div className="form-group">
-                                    <label className="form-label">Meeting Time</label>
-                                    <input type="time" className="form-input" value={formData.meeting_time} onChange={e => setFormData({...formData, meeting_time: e.target.value})} />
-                                </div>
+                                <div className="form-group"><label className="form-label">Meeting Time</label><input type="time" className="form-input" value={formData.meeting_time} onChange={e => setFormData({...formData, meeting_time: e.target.value})} /></div>
 
-                                <button className="btn btn-success" onClick={handleAdd} style={{width: '100%', justifyContent: 'center', marginTop: '20px'}}>
-                                    Create Group
-                                </button>
+                                <button className="btn btn-success" onClick={handleAdd} style={{width: '100%', justifyContent: 'center', marginTop: '20px'}}>Create Group</button>
                             </div>
                         </div>
                     )}
@@ -756,7 +763,10 @@
                                         <div style={{fontSize: '16px', fontWeight: '700', color: '#2E4A9E'}}>{group.name}</div>
                                         <div style={{fontSize: '12px', color: '#666', marginTop: '5px'}}>📍 {group.location}</div>
                                     </div>
-                                    <button className="btn btn-danger btn-sm" onClick={() => handleDelete(group.id)}>🗑️</button>
+                                    <div style={{display: 'flex', gap: '8px'}}>
+                                        <button className="btn btn-secondary btn-sm" onClick={() => openManage(group)}>👥 Manage</button>
+                                        <button className="btn btn-danger btn-sm" onClick={() => handleDelete(group.id)}>🗑️</button>
+                                    </div>
                                 </div>
 
                                 <div style={{fontSize: '12px', color: '#666', lineHeight: '1.6'}}>
@@ -767,6 +777,41 @@
                             </div>
                         ))}
                     </div>
+
+                    {manageGroup && (
+                        <div className="modal-overlay" onClick={() => setManageGroup(null)}>
+                            <div className="modal" onClick={e => e.stopPropagation()}>
+                                <div className="modal-header">Manage Members - {manageGroup.name}<button className="modal-close" onClick={() => setManageGroup(null)}>✕</button></div>
+
+                                <div>
+                                    <div style={{marginBottom: '12px', fontWeight: 700}}>Current Members</div>
+                                    {(manageGroup.members || []).length === 0 && <div className="empty-state">No members yet</div>}
+                                    <ul>
+                                        {(manageGroup.members || []).map(mid => {
+                                            const m = allMembers.find(x => x.id === mid) || { name: 'Unknown', phone: '' };
+                                            return (
+                                                <li key={mid} style={{marginBottom: '8px'}}>
+                                                    <strong>{m.name}</strong> <span style={{color:'#666'}}>({m.phone || 'N/A'})</span>
+                                                    <button className="btn btn-danger btn-sm" style={{marginLeft: '8px'}} onClick={() => handleRemoveMemberFromGroup(manageGroup.id, mid)}>Remove</button>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+
+                                    <div style={{marginTop: '15px'}}>
+                                        <div className="form-group"><label className="form-label">Name</label><input className="form-input" value={newMemberData.name} onChange={e => setNewMemberData({...newMemberData, name: e.target.value})} /></div>
+                                        <div className="form-group"><label className="form-label">Phone</label><input className="form-input" value={newMemberData.phone} onChange={e => setNewMemberData({...newMemberData, phone: e.target.value})} /></div>
+                                        <div className="grid-2">
+                                            <div className="form-group"><label className="form-label">Gender</label><select className="form-select" value={newMemberData.gender} onChange={e => setNewMemberData({...newMemberData, gender: e.target.value})}><option value="">Select</option><option value="male">Male</option><option value="female">Female</option></select></div>
+                                            <div className="form-group"><label className="form-label">Status</label><select className="form-select" value={newMemberData.status} onChange={e => setNewMemberData({...newMemberData, status: e.target.value})}><option value="member">Member</option><option value="first_timer">First Timer</option></select></div>
+                                        </div>
+
+                                        <button className="btn btn-success" onClick={handleAddMemberToGroup} style={{marginTop: '10px'}}>Add Member</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {cellChurches.length === 0 && <div className="empty-state">No cell churches yet. Create your first group!</div>}
                 </div>
@@ -1017,8 +1062,29 @@
         }
 
         // Departments Component
-        function DepartmentsPage() {
+        function DepartmentsPage({ user }) {
             const deptList = window.DEPARTMENTS ? Object.entries(window.DEPARTMENTS).filter(([k, v]) => k !== 'admin') : [];
+
+            if (!user || user.role !== 'admin') {
+                const myDept = user && user.dept && window.DEPARTMENTS ? window.DEPARTMENTS[user.dept] : null;
+                return (
+                    <div>
+                        <div className="page-header">
+                            <h1 className="page-title">Departments</h1>
+                        </div>
+                        {myDept ? (
+                            <div className="card">
+                                <div className="card-body">
+                                    <strong>{myDept.description || user.dept}</strong>
+                                    <div style={{fontSize: '13px', color: '#555'}}>Contact admin to retrieve department credentials.</div>
+                                </div>
+                            </div>
+                        ) : (
+                            <p>You do not have permission to view departments. Contact an administrator.</p>
+                        )}
+                    </div>
+                );
+            }
 
             return (
                 <div>
@@ -1138,7 +1204,7 @@
                             <MembersPage members={displayMembers} />
                         )}
                         {currentPage === 'cellChurches' && (
-                            <CellChurchesPage cellChurches={cellChurches} setCellChurches={setCellChurches} members={displayMembers} />
+                            <CellChurchesPage cellChurches={cellChurches} setCellChurches={setCellChurches} members={displayMembers} allMembers={members} setMembers={setMembers} user={user} />
                         )}
                         {currentPage === 'attendance' && (
                             <AttendancePage members={displayMembers} attendance={attendance} setAttendance={setAttendance} />
@@ -1147,7 +1213,7 @@
                             <AttendanceUploadPage members={displayMembers} attendance={attendance} setAttendance={setAttendance} />
                         )}
                         {currentPage === 'departments' && (
-                            <DepartmentsPage />
+                            <DepartmentsPage user={user} />
                         )}
                         {currentPage === 'analytics' && (
                             <AnalyticsPage members={displayMembers} attendance={attendance} />
