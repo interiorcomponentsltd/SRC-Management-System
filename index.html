@@ -528,6 +528,7 @@
                 { id: 'attendance', label: 'Attendance', icon: '📝' },
                 { id: 'attendanceFilter', label: 'Bulk Attendance', icon: '📋' },
                 { id: 'attendanceUpload', label: 'Upload Attendance', icon: '📤' },
+                    { id: 'mappings', label: 'Mappings', icon: '🛠️' },
                 { id: 'departments', label: 'Departments', icon: '🏷️' },
                 { id: 'analytics', label: 'Analytics', icon: '📊' },
             ];
@@ -1179,6 +1180,85 @@
             );
         }
 
+        // Mapping Review Component - review unmapped members and assign canonical departments
+        function MappingPage({ members, setMembers }) {
+            const [selection, setSelection] = useState({}); // id -> boolean
+            const [assignments, setAssignments] = useState({}); // id -> department
+
+            const canonical = window.DEPARTMENTS ? Object.keys(window.DEPARTMENTS).filter(k => k !== 'admin') : [];
+            const unmapped = members.filter(m => !canonical.includes(m.department));
+
+            const toggleSelect = (id) => setSelection(prev => ({ ...prev, [id]: !prev[id] }));
+            const setAssign = (id, dept) => setAssignments(prev => ({ ...prev, [id]: dept }));
+
+            const applySelected = () => {
+                const toApply = Object.keys(selection).filter(id => selection[id] && assignments[id]);
+                if (toApply.length === 0) { alert('Select members and choose a department for them'); return; }
+                setMembers(prev => prev.map(m => (toApply.includes(String(m.id)) ? { ...m, department: assignments[m.id] } : m)));
+                alert(`Assigned ${toApply.length} members`);
+                setSelection({}); setAssignments({});
+            };
+
+            const assignAllTo = (dept) => {
+                if (!dept) return; if (!confirm(`Assign all ${unmapped.length} unmapped members to ${dept}?`)) return;
+                setMembers(prev => prev.map(m => (!canonical.includes(m.department) ? { ...m, department: dept } : m)));
+                alert('Assigned all unmapped members');
+            };
+
+            return (
+                <div>
+                    <div className="page-header">
+                        <h1 className="page-title">Department Mappings</h1>
+                        <div style={{display:'flex', gap:10}}>
+                            <select className="form-select" id="assignAllSelect">
+                                <option value="">Assign all unmapped to...</option>
+                                {canonical.map(d => <option key={d} value={d}>{d}</option>)}
+                            </select>
+                            <button className="btn btn-primary" onClick={() => { const sel = document.getElementById('assignAllSelect').value; if (sel) assignAllTo(sel); }}>Assign All</button>
+                        </div>
+                    </div>
+
+                    <div className="table-container">
+                        <div style={{padding: '15px 20px', borderBottom: '1px solid #f0f0f0', fontSize: '14px', fontWeight: '600', color: '#2E4A9E'}}>
+                            Unmapped Members ({unmapped.length})
+                        </div>
+
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th width="5%">Sel</th>
+                                    <th width="40%">Name</th>
+                                    <th width="20%">Phone</th>
+                                    <th width="25%">Current Dept</th>
+                                    <th width="10%">Assign</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {unmapped.map(m => (
+                                    <tr key={m.id}>
+                                        <td><input type="checkbox" checked={!!selection[m.id]} onChange={() => toggleSelect(m.id)} /></td>
+                                        <td><strong>{m.name}</strong></td>
+                                        <td style={{fontSize:'12px'}}>{m.phone || '-'}</td>
+                                        <td>{m.department || 'Unassigned'}</td>
+                                        <td>
+                                            <select className="form-select" value={assignments[m.id] || ''} onChange={e => setAssign(m.id, e.target.value)}>
+                                                <option value="">--</option>
+                                                {canonical.map(d => <option key={d} value={d}>{d}</option>)}
+                                            </select>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+
+                        <div style={{padding: 15, display:'flex', gap:10}}>
+                            <button className="btn btn-success" onClick={applySelected}>Apply Selected</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
         // First Timers Follow-up Component
         function FirstTimerFollowupPage({ firstTimers }) {
             const [search, setSearch] = useState('');
@@ -1703,6 +1783,9 @@
                         )}
                         {currentPage === 'attendanceUpload' && (
                             <AttendanceUploadPage members={displayMembers} attendance={attendance} setAttendance={setAttendance} />
+                        )}
+                        {currentPage === 'mappings' && (
+                            <MappingPage members={members} setMembers={setMembers} />
                         )}
                         {currentPage === 'departments' && (
                             <DepartmentsPage user={user} />
