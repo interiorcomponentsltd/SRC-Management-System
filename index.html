@@ -49,12 +49,27 @@
             margin-bottom: 10px;
             border: 3px solid #87CEEB;
             object-fit: cover;
+            background: #ddd;
         }
 
         .logo-section h1 {
-            font-size: 16px;
+            font-size: 14px;
             margin-bottom: 5px;
             color: #FFFFE0;
+        }
+
+        .logo-section p {
+            font-size: 11px;
+            color: #87CEEB;
+        }
+
+        .user-info {
+            font-size: 11px;
+            color: #FFFFE0;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.3);
+            word-break: break-word;
         }
 
         .nav-menu {
@@ -81,6 +96,7 @@
             margin-left: 280px;
             flex: 1;
             padding: 20px;
+            overflow-y: auto;
         }
 
         .page-header {
@@ -99,7 +115,7 @@
         /* Stats Grid */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 15px;
             margin-bottom: 25px;
         }
@@ -110,10 +126,8 @@
             border-radius: 12px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             border-left: 5px solid #4169E1;
-            transition: transform 0.3s;
         }
 
-        .stat-card:hover { transform: translateY(-3px); }
         .stat-value { font-size: 32px; font-weight: 700; color: #2E4A9E; margin: 8px 0; }
         .stat-label { color: #666; font-size: 12px; text-transform: uppercase; }
 
@@ -205,6 +219,7 @@
             margin: 0 auto 20px;
             border: 4px solid #4169E1;
             object-fit: cover;
+            background: #ddd;
         }
 
         .alert {
@@ -215,7 +230,6 @@
         }
         .alert-danger { background: #f8d7da; color: #721c24; }
         .alert-success { background: #d4edda; color: #155724; }
-        .alert-info { background: #d1ecf1; color: #0c5460; }
 
         .badge {
             padding: 4px 10px;
@@ -273,13 +287,8 @@
 
         .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         .empty-state { text-align: center; padding: 40px 20px; color: #999; }
-
-        /* Search Bar */
         .search-container { margin-bottom: 20px; }
-        .search-input {
-            width: 100%;
-            max-width: 400px;
-        }
+        .search-input { width: 100%; max-width: 400px; }
 
         @media (max-width: 768px) {
             .sidebar { width: 0; overflow: hidden; transform: translateX(-280px); }
@@ -287,6 +296,35 @@
             .page-header { flex-direction: column; align-items: flex-start; gap: 15px; }
             .grid-2 { grid-template-columns: 1fr; }
             .stats-grid { grid-template-columns: 1fr; }
+        }
+
+        .tabs-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-weight: 600;
+            color: #666;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            color: #4169E1;
+            border-bottom-color: #4169E1;
+        }
+
+        .tab-btn:hover {
+            color: #4169E1;
         }
     </style>
 </head>
@@ -342,20 +380,20 @@
                 e.preventDefault();
                 setError('');
                 
-                // Check admin
-                if (username === 'admin' && password === 'SRC2024admin') {
-                    onLogin({ username: 'admin', dept: 'all', role: 'admin' });
-                    return;
-                }
-
-                // Check departments
-                const dept = DEPARTMENTS ? Object.keys(DEPARTMENTS).find(d => 
-                    username === DEPARTMENTS[d].username && password === DEPARTMENTS[d].password
-                ) : null;
-
-                if (dept && DEPARTMENTS[dept]) {
-                    onLogin({ username, dept, role: 'leader', description: DEPARTMENTS[dept].description });
-                    return;
+                // Check all departments and admin
+                if (window.DEPARTMENTS) {
+                    for (const [deptName, deptInfo] of Object.entries(window.DEPARTMENTS)) {
+                        if (deptInfo.username === username && deptInfo.password === password) {
+                            const isAdmin = deptName === 'admin';
+                            onLogin({
+                                username,
+                                dept: isAdmin ? 'all' : deptName,
+                                role: isAdmin ? 'admin' : 'leader',
+                                description: deptInfo.description
+                            });
+                            return;
+                        }
+                    }
                 }
 
                 setError('Invalid username or password');
@@ -368,7 +406,7 @@
                             Spirit Realm Centre
                         </h2>
                         <p style={{textAlign: 'center', marginBottom: '30px', color: '#666', fontSize: '13px'}}>
-                            Management System v2.0
+                            Church Management System v2.0
                         </p>
                         
                         {error && <div className="alert alert-danger">{error}</div>}
@@ -399,14 +437,6 @@
                                 Sign In
                             </button>
                         </form>
-                        
-                        <div style={{marginTop: '25px', paddingTop: '20px', borderTop: '1px solid #eee', fontSize: '12px'}}>
-                            <strong style={{color: '#2E4A9E'}}>Demo Credentials:</strong>
-                            <div style={{marginTop: '8px', color: '#666', lineHeight: '1.6'}}>
-                                Admin: <code>admin</code> / <code>SRC2024admin</code><br/>
-                                Or use any department username from the app
-                            </div>
-                        </div>
                     </div>
                 </div>
             );
@@ -417,9 +447,9 @@
             const menuItems = [
                 { id: 'dashboard', icon: '📊', label: 'Dashboard' },
                 { id: 'members', icon: '👥', label: 'Members' },
-                { id: 'addMember', icon: '➕', label: 'Add Member' },
                 { id: 'cellChurches', icon: '🏘️', label: 'Cell Churches' },
                 { id: 'attendance', icon: '✓', label: 'Attendance' },
+                { id: 'attendanceUpload', icon: '📥', label: 'Upload Attendance' },
                 { id: 'departments', icon: '🏢', label: 'Departments' },
                 { id: 'analytics', icon: '📈', label: 'Analytics' },
             ];
@@ -427,10 +457,10 @@
             return (
                 <div className="sidebar">
                     <div className="logo-section">
-                        <h1>SRC</h1>
-                        <p style={{fontSize: '11px'}}>Management System</p>
-                        <div style={{marginTop: '12px', fontSize: '10px', color: '#FFFFE0', wordBreak: 'break-word'}}>
-                            <strong>{user.description || user.dept}</strong>
+                        <h1>🏛️ SRC</h1>
+                        <p>Management System</p>
+                        <div className="user-info">
+                            {user.description}
                         </div>
                     </div>
                     <ul className="nav-menu">
@@ -459,22 +489,19 @@
         }
 
         // Dashboard Component
-        function Dashboard({ members, cellChurches, attendance }) {
+        function Dashboard({ members, attendance }) {
             const deptMembers = members.filter(m => m.status !== 'first_timer');
             const firstTimers = members.filter(m => m.status === 'first_timer');
 
             return (
                 <div>
                     <div className="page-header">
-                        <div>
-                            <h1 className="page-title">Dashboard</h1>
-                            <p style={{color: '#666', fontSize: '12px'}}>Welcome to Spirit Realm Centre Management System</p>
-                        </div>
+                        <h1 className="page-title">Dashboard</h1>
                     </div>
 
                     <div className="stats-grid">
                         <div className="stat-card">
-                            <div className="stat-label">Total Members</div>
+                            <div className="stat-label">Department Members</div>
                             <div className="stat-value">{deptMembers.length}</div>
                         </div>
                         <div className="stat-card">
@@ -482,8 +509,8 @@
                             <div className="stat-value">{firstTimers.length}</div>
                         </div>
                         <div className="stat-card">
-                            <div className="stat-label">Cell Churches</div>
-                            <div className="stat-value">{cellChurches.length}</div>
+                            <div className="stat-label">Total Members</div>
+                            <div className="stat-value">{members.length}</div>
                         </div>
                         <div className="stat-card">
                             <div className="stat-label">Attendance Records</div>
@@ -511,7 +538,7 @@
                                         <td style={{fontSize: '12px'}}>{member.phone || 'N/A'}</td>
                                         <td>{member.department}</td>
                                         <td>
-                                            <span className={`badge badge-${member.status === 'first_timer' ? 'info' : 'success'}`}>
+                                            <span className={`badge ${member.status === 'first_timer' ? 'badge-info' : 'badge-success'}`}>
                                                 {member.status === 'first_timer' ? 'First Timer' : 'Member'}
                                             </span>
                                         </td>
@@ -519,25 +546,31 @@
                                 ))}
                             </tbody>
                         </table>
-                        {members.length === 0 && <div className="empty-state">No members yet</div>}
+                        {members.length === 0 && <div className="empty-state">No members in your department</div>}
                     </div>
                 </div>
             );
         }
 
         // Members List Component
-        function MembersPage({ members, onEdit, onDelete }) {
+        function MembersPage({ members }) {
             const [search, setSearch] = useState('');
+            const [tabView, setTabView] = useState('all');
 
             const filtered = members.filter(m => 
                 m.name.toLowerCase().includes(search.toLowerCase()) ||
                 (m.phone && m.phone.includes(search))
             );
 
+            const allMembers = filtered.filter(m => m.status !== 'first_timer');
+            const firstTimers = filtered.filter(m => m.status === 'first_timer');
+
+            const displayMembers = tabView === 'all' ? allMembers : firstTimers;
+
             return (
                 <div>
                     <div className="page-header">
-                        <h1 className="page-title">Members ({members.length})</h1>
+                        <h1 className="page-title">Members</h1>
                         <button className="btn btn-primary" onClick={() => exportToExcel(members, 'Members')}>
                             📥 Export Excel
                         </button>
@@ -553,194 +586,49 @@
                         />
                     </div>
 
+                    <div className="tabs-container">
+                        <button 
+                            className={`tab-btn ${tabView === 'all' ? 'active' : ''}`}
+                            onClick={() => setTabView('all')}
+                        >
+                            All Members ({allMembers.length})
+                        </button>
+                        <button 
+                            className={`tab-btn ${tabView === 'firstTimers' ? 'active' : ''}`}
+                            onClick={() => setTabView('firstTimers')}
+                        >
+                            First Timers ({firstTimers.length})
+                        </button>
+                    </div>
+
                     <div className="table-container">
                         <table>
                             <thead>
                                 <tr>
                                     <th width="25%">Name</th>
                                     <th width="15%">Phone</th>
-                                    <th width="20%">Department</th>
                                     <th width="15%">Gender</th>
-                                    <th width="25%">Actions</th>
+                                    <th width="20%">Department</th>
+                                    <th width="25%">Status</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {filtered.map(member => (
+                                {displayMembers.map(member => (
                                     <tr key={member.id}>
                                         <td><strong>{member.name}</strong></td>
                                         <td style={{fontSize: '12px'}}>{member.phone || '-'}</td>
-                                        <td>{member.department}</td>
                                         <td>{member.gender || '-'}</td>
+                                        <td>{member.department}</td>
                                         <td>
-                                            <button className="btn btn-sm btn-secondary" onClick={() => onEdit(member)}>
-                                                ✏️ Edit
-                                            </button>
-                                            <button className="btn btn-sm btn-danger" onClick={() => {
-                                                if(confirm('Delete this member?')) onDelete(member.id);
-                                            }} style={{marginLeft: '5px'}}>
-                                                🗑️ Delete
-                                            </button>
+                                            <span className={`badge ${member.status === 'first_timer' ? 'badge-info' : 'badge-success'}`}>
+                                                {member.status === 'first_timer' ? 'First Timer' : 'Member'}
+                                            </span>
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
-                        {filtered.length === 0 && <div className="empty-state">No members found</div>}
-                    </div>
-                </div>
-            );
-        }
-
-        // Add Member Component
-        function AddMemberPage({ members, setMembers, departments }) {
-            const [formData, setFormData] = useState({
-                name: '',
-                phone: '',
-                gender: '',
-                marital_status: '',
-                address: '',
-                state_of_origin: '',
-                occupation: '',
-                department: '',
-                prayer_request: '',
-                counselor: '',
-                date_joined: new Date().toISOString().split('T')[0],
-                baptism: '',
-                status: 'existing_member'
-            });
-
-            const [message, setMessage] = useState('');
-
-            const handleChange = (e) => {
-                const { name, value } = e.target;
-                setFormData(prev => ({ ...prev, [name]: value }));
-            };
-
-            const handleSubmit = (e) => {
-                e.preventDefault();
-                if (!formData.name || !formData.department) {
-                    setMessage('Name and Department are required');
-                    return;
-                }
-
-                const newMember = {
-                    ...formData,
-                    id: Math.max(...members.map(m => m.id || 0), 0) + 1
-                };
-
-                setMembers(prev => [...prev, newMember]);
-                setMessage('Member added successfully!');
-                
-                setTimeout(() => {
-                    setFormData({
-                        name: '', phone: '', gender: '', marital_status: '', address: '',
-                        state_of_origin: '', occupation: '', department: '', 
-                        prayer_request: '', counselor: '', baptism: '',
-                        date_joined: new Date().toISOString().split('T')[0],
-                        status: 'existing_member'
-                    });
-                    setMessage('');
-                }, 2000);
-            };
-
-            const deptList = [...new Set(members.map(m => m.department))].sort();
-
-            return (
-                <div>
-                    <div className="page-header">
-                        <h1 className="page-title">Add New Member</h1>
-                    </div>
-
-                    {message && (
-                        <div className={`alert ${message.includes('successfully') ? 'alert-success' : 'alert-danger'}`}>
-                            {message}
-                        </div>
-                    )}
-
-                    <div className="table-container" style={{padding: '30px'}}>
-                        <form onSubmit={handleSubmit}>
-                            <div className="grid-2">
-                                <div className="form-group">
-                                    <label className="form-label">Full Name *</label>
-                                    <input type="text" name="name" className="form-input" value={formData.name} onChange={handleChange} required />
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">Phone</label>
-                                    <input type="tel" name="phone" className="form-input" value={formData.phone} onChange={handleChange} />
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">Gender</label>
-                                    <select name="gender" className="form-select" value={formData.gender} onChange={handleChange}>
-                                        <option value="">Select</option>
-                                        <option value="MALE">Male</option>
-                                        <option value="FEMALE">Female</option>
-                                    </select>
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">Marital Status</label>
-                                    <select name="marital_status" className="form-select" value={formData.marital_status} onChange={handleChange}>
-                                        <option value="">Select</option>
-                                        <option value="Single">Single</option>
-                                        <option value="Married">Married</option>
-                                        <option value="Widowed">Widowed</option>
-                                        <option value="Divorced">Divorced</option>
-                                    </select>
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">Address</label>
-                                    <input type="text" name="address" className="form-input" value={formData.address} onChange={handleChange} />
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">State of Origin</label>
-                                    <input type="text" name="state_of_origin" className="form-input" value={formData.state_of_origin} onChange={handleChange} />
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">Occupation</label>
-                                    <input type="text" name="occupation" className="form-input" value={formData.occupation} onChange={handleChange} />
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">Department *</label>
-                                    <select name="department" className="form-select" value={formData.department} onChange={handleChange} required>
-                                        <option value="">Select Department</option>
-                                        {deptList.map(dept => <option key={dept} value={dept}>{dept}</option>)}
-                                    </select>
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">Status</label>
-                                    <select name="status" className="form-select" value={formData.status} onChange={handleChange}>
-                                        <option value="existing_member">Existing Member</option>
-                                        <option value="first_timer">First Timer</option>
-                                    </select>
-                                </div>
-                                <div className="form-group">
-                                    <label className="form-label">Date Joined</label>
-                                    <input type="date" name="date_joined" className="form-input" value={formData.date_joined} onChange={handleChange} />
-                                </div>
-                            </div>
-
-                            <div className="form-group">
-                                <label className="form-label">Prayer Request</label>
-                                <textarea name="prayer_request" className="form-textarea" rows="3" value={formData.prayer_request} onChange={handleChange}></textarea>
-                            </div>
-
-                            <div className="form-group">
-                                <label className="form-label">Counselor</label>
-                                <input type="text" name="counselor" className="form-input" value={formData.counselor} onChange={handleChange} />
-                            </div>
-
-                            <div className="form-group">
-                                <label className="form-label">Baptism Status</label>
-                                <select name="baptism" className="form-select" value={formData.baptism} onChange={handleChange}>
-                                    <option value="">Select</option>
-                                    <option value="Yes">Yes</option>
-                                    <option value="No">No</option>
-                                </select>
-                            </div>
-
-                            <button type="submit" className="btn btn-primary" style={{marginTop: '20px'}}>
-                                ➕ Add Member
-                            </button>
-                        </form>
+                        {displayMembers.length === 0 && <div className="empty-state">No members found</div>}
                     </div>
                 </div>
             );
@@ -976,9 +864,132 @@
             );
         }
 
+        // Upload Attendance Component
+        function AttendanceUploadPage({ members, attendance, setAttendance }) {
+            const [uploadDate, setUploadDate] = useState(new Date().toISOString().split('T')[0]);
+
+            const handleFileUpload = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                try {
+                    const data = await file.arrayBuffer();
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(worksheet);
+
+                    if (rows.length === 0) {
+                        alert('No data found in the file');
+                        return;
+                    }
+
+                    // Find members who attended from the uploaded list
+                    const attendedNames = rows.map(row => Object.values(row)[0]?.toString().trim().toUpperCase());
+                    const presentMembers = members.filter(m => attendedNames.includes(m.name.toUpperCase()));
+
+                    // Clear existing records for this date
+                    const filteredAttendance = attendance.filter(a => a.date !== uploadDate);
+
+                    // Add new attendance records
+                    const newRecords = presentMembers.map(member => ({
+                        id: Math.random(),
+                        member_id: member.id,
+                        member_name: member.name,
+                        department: member.department,
+                        date: uploadDate,
+                        timestamp: new Date().toISOString()
+                    }));
+
+                    setAttendance([...filteredAttendance, ...newRecords]);
+
+                    alert(`Attendance uploaded successfully!\nPresent: ${presentMembers.length}\nAbsent: ${members.length - presentMembers.length}`);
+
+                    e.target.value = '';
+                } catch (error) {
+                    alert('Error reading file: ' + error.message);
+                }
+            };
+
+            const todayAttendance = attendance.filter(a => a.date === uploadDate);
+            const absent = members.filter(m => !todayAttendance.find(a => a.member_id === m.id));
+
+            return (
+                <div>
+                    <div className="page-header">
+                        <h1 className="page-title">Upload Attendance</h1>
+                    </div>
+
+                    <div className="table-container" style={{padding: '30px'}}>
+                        <div style={{marginBottom: '20px', background: '#f0f8ff', padding: '20px', borderRadius: '8px', borderLeft: '4px solid #4169E1'}}>
+                            <h3 style={{color: '#2E4A9E', marginBottom: '10px'}}>📥 Upload Attendance File</h3>
+                            <p style={{color: '#666', fontSize: '13px', marginBottom: '15px'}}>
+                                Upload an Excel file with a list of members who were present. The first column should contain member names.
+                            </p>
+                            <div className="form-group">
+                                <label className="form-label">Service Date</label>
+                                <input type="date" className="form-input" value={uploadDate} onChange={e => setUploadDate(e.target.value)} style={{maxWidth: '300px'}} />
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">Upload File</label>
+                                <input type="file" className="form-input" accept=".xlsx,.xls,.csv" onChange={handleFileUpload} />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '25px'}}>
+                        <div className="table-container" style={{padding: '20px'}}>
+                            <div style={{fontSize: '14px', fontWeight: '600', color: '#28a745', marginBottom: '15px'}}>
+                                ✓ Present ({todayAttendance.length})
+                            </div>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Department</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {todayAttendance.slice(0, 20).map(record => (
+                                        <tr key={record.id}>
+                                            <td><strong>{record.member_name}</strong></td>
+                                            <td style={{fontSize: '12px'}}>{record.department}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            {todayAttendance.length === 0 && <div className="empty-state" style={{padding: '20px'}}>No attendance recorded for this date</div>}
+                        </div>
+
+                        <div className="table-container" style={{padding: '20px'}}>
+                            <div style={{fontSize: '14px', fontWeight: '600', color: '#dc3545', marginBottom: '15px'}}>
+                                ✗ Absent ({absent.length})
+                            </div>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Department</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {absent.slice(0, 20).map(member => (
+                                        <tr key={member.id}>
+                                            <td><strong>{member.name}</strong></td>
+                                            <td style={{fontSize: '12px'}}>{member.department}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            {absent.length === 0 && <div className="empty-state" style={{padding: '20px'}}>All members present!</div>}
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
         // Departments Component
         function DepartmentsPage() {
-            const deptList = DEPARTMENTS ? Object.entries(DEPARTMENTS).filter(([k, v]) => k !== 'admin') : [];
+            const deptList = window.DEPARTMENTS ? Object.entries(window.DEPARTMENTS).filter(([k, v]) => k !== 'admin') : [];
 
             return (
                 <div>
@@ -993,8 +1004,8 @@
                                     {dept.description}
                                 </div>
                                 <div style={{fontSize: '13px', color: '#666', background: '#f8f9fa', padding: '12px', borderRadius: '6px', fontFamily: 'monospace', lineHeight: '1.8'}}>
-                                    <div><strong>Username:</strong> {dept.username}</div>
-                                    <div><strong>Password:</strong> {dept.password}</div>
+                                    <div><strong>Username:</strong> <span style={{color: '#2E4A9E'}}>{dept.username}</span></div>
+                                    <div><strong>Password:</strong> <span style={{color: '#2E4A9E'}}>{dept.password}</span></div>
                                 </div>
                             </div>
                         ))}
@@ -1004,7 +1015,7 @@
         }
 
         // Analytics Component
-        function AnalyticsPage({ members, attendance, cellChurches }) {
+        function AnalyticsPage({ members, attendance }) {
             const deptStats = {};
             members.forEach(m => {
                 deptStats[m.department] = (deptStats[m.department] || 0) + 1;
@@ -1039,7 +1050,7 @@
                     </div>
 
                     <div className="table-container">
-                        <div style={{padding: '15px 20px', fontSize: '14px', fontWeight: '600', color: '#2E4A9E'}}>
+                        <div style={{padding: '15px 20px', fontSize: '14px', fontWeight: '600', color: '#2E4A9E', borderBottom: '1px solid #f0f0f0'}}>
                             Members by Department
                         </div>
                         <table>
@@ -1070,12 +1081,12 @@
             const [user, setUser] = useState(null);
             const [currentPage, setCurrentPage] = useState('dashboard');
             const [members, setMembers] = useLocalStorage('src_members_v2', window.MEMBERS || []);
-            const [cellChurches, setCellChurches] = useLocalStorage('src_cell_churches', window.CELL_CHURCHES || []);
+            const [cellChurches, setCellChurches] = useLocalStorage('src_cell_churches', []);
             const [attendance, setAttendance] = useLocalStorage('src_attendance_v2', []);
 
             // Filter members based on user role
             const displayMembers = user && user.role !== 'admin' 
-                ? members.filter(m => m.department === user.dept)
+                ? members.filter(m => m.department === user.dept || user.dept === 'all')
                 : members;
 
             if (!user) {
@@ -1092,13 +1103,10 @@
                     />
                     <div className="main-content">
                         {currentPage === 'dashboard' && (
-                            <Dashboard members={displayMembers} cellChurches={cellChurches} attendance={attendance} />
+                            <Dashboard members={displayMembers} attendance={attendance} />
                         )}
                         {currentPage === 'members' && (
-                            <MembersPage members={displayMembers} onEdit={() => {}} onDelete={(id) => setMembers(members.filter(m => m.id !== id))} />
-                        )}
-                        {currentPage === 'addMember' && (
-                            <AddMemberPage members={members} setMembers={setMembers} departments={Array.from(new Set(members.map(m => m.department)))} />
+                            <MembersPage members={displayMembers} />
                         )}
                         {currentPage === 'cellChurches' && (
                             <CellChurchesPage cellChurches={cellChurches} setCellChurches={setCellChurches} members={displayMembers} />
@@ -1106,11 +1114,14 @@
                         {currentPage === 'attendance' && (
                             <AttendancePage members={displayMembers} attendance={attendance} setAttendance={setAttendance} />
                         )}
+                        {currentPage === 'attendanceUpload' && (
+                            <AttendanceUploadPage members={displayMembers} attendance={attendance} setAttendance={setAttendance} />
+                        )}
                         {currentPage === 'departments' && (
                             <DepartmentsPage />
                         )}
                         {currentPage === 'analytics' && (
-                            <AnalyticsPage members={displayMembers} attendance={attendance} cellChurches={cellChurches} />
+                            <AnalyticsPage members={displayMembers} attendance={attendance} />
                         )}
                     </div>
                 </div>
