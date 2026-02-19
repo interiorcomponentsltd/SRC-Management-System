@@ -347,7 +347,12 @@
         let loadedGeneralMembers = [];
         let loadedFirstTimers = [];
 
-        // Load data from JSON files
+        // Normalize helper
+        function normalizeText(s) {
+            return (s || '').toString().toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+        }
+
+        // Load data from JSON files and normalize departments
         async function loadMembersData() {
             try {
                 const [genResponse, ftResponse] = await Promise.all([
@@ -363,7 +368,37 @@
                 window.FIRST_TIMERS = loadedFirstTimers;
 
                 // Merge general members first, then first timers (so first timers keep status)
-                window.MEMBERS = [...(window.GENERAL_MEMBERS || []), ...(window.FIRST_TIMERS || [])];
+                const merged = [...(window.GENERAL_MEMBERS || []), ...(window.FIRST_TIMERS || [])];
+
+                // Normalize department names to canonical keys from window.DEPARTMENTS
+                const canonicalDepts = window.DEPARTMENTS ? Object.keys(window.DEPARTMENTS).filter(k => k !== 'admin') : [];
+                let maxId = merged.reduce((m, x) => Math.max(m, x && x.id ? Number(x.id) : 0), 0);
+
+                const normalized = merged.map(m => {
+                    const member = { ...(m || {}) };
+                    member.name = (member.name || '').toString().trim();
+                    member.phone = (member.phone || '').toString().replace(/[^0-9+]/g, '').trim();
+                    if (!member.id) { maxId += 1; member.id = maxId; }
+
+                    const deptRaw = (member.department || '').toString().trim();
+                    const nDeptRaw = normalizeText(deptRaw);
+
+                    let matched = null;
+                    for (const dk of canonicalDepts) {
+                        const desc = (window.DEPARTMENTS[dk] && window.DEPARTMENTS[dk].description) ? window.DEPARTMENTS[dk].description : '';
+                        const ndk = normalizeText(dk);
+                        const nDesc = normalizeText(desc);
+                        if (!nDeptRaw) continue;
+                        if (nDeptRaw === ndk || nDeptRaw.includes(ndk) || ndk.includes(nDeptRaw) || nDesc.includes(nDeptRaw) || nDeptRaw.includes(nDesc)) {
+                            matched = dk; break;
+                        }
+                    }
+
+                    member.department = matched || (deptRaw || 'Unassigned');
+                    return member;
+                });
+
+                window.MEMBERS = normalized;
 
                 // Dispatch event for the app to pick up
                 try { document.dispatchEvent(new Event('membersLoaded')); } catch(e){}
@@ -484,7 +519,7 @@
         }
 
         // Sidebar Component
-        function Sidebar({ currentPage, setCurrentPage, user, onLogout }) {
+        function Sidebar({ currentPage, setCurrentPage, user, onLogout, onOpenAddMember }) {
             const menuItems = [
                 { id: 'dashboard', label: 'Dashboard', icon: '🏠' },
                 { id: 'members', label: 'Members', icon: '👥' },
@@ -520,6 +555,14 @@
                     </ul>
 
                     <div style={{padding: '15px', borderTop: '1px solid rgba(255,255,255,0.2)'}}>
+                        <button 
+                            onClick={() => onOpenAddMember && onOpenAddMember()}
+                            className="btn btn-success"
+                            style={{width: '100%', justifyContent: 'center', fontSize: '12px', marginBottom: '8px'}}
+                        >
+                            ➕ Add Member
+                        </button>
+
                         <button 
                             onClick={onLogout}
                             className="btn btn-danger"
@@ -601,10 +644,14 @@
             const [search, setSearch] = useState('');
             const [tabView, setTabView] = useState('all');
 
-            const filtered = members.filter(m => 
-                m.name.toLowerCase().includes(search.toLowerCase()) ||
-                (m.phone && m.phone.includes(search))
-            );
+            const s = search.trim();
+            const sNorm = normalizeText(s);
+            const filtered = members.filter(m => {
+                if (!s) return true;
+                const nameNorm = normalizeText(m.name || '');
+                const phone = (m.phone || '').toString();
+                return (sNorm && nameNorm.includes(sNorm)) || (phone && phone.includes(s));
+            });
 
             const allMembers = filtered.filter(m => m.status !== 'first_timer');
             const firstTimers = filtered.filter(m => m.status === 'first_timer');
@@ -1196,26 +1243,29 @@
         }
 
         // General Members Component
-        function GeneralMembersPage({ members, setMembers }) {
+        function GeneralMembersPage({ members, setMembers, showAddModal, setShowAddModal }) {
             const [search, setSearch] = useState('');
             const [selectedDept, setSelectedDept] = useState('');
             const [filtered, setFiltered] = useState(members);
-            const [showModal, setShowModal] = useState(false);
             const [newMember, setNewMember] = useState({ name: '', phone: '', gender: '', department: '', status: 'member', address: '' });
 
             const depts = [...new Set(members.map(m => m.department))].filter(d => d && d !== 'Unassigned').sort();
 
             useEffect(() => {
-                let result = members.filter(m => 
-                    m.status === 'member' &&
-                    (m.name.toLowerCase().includes(search.toLowerCase()) ||
-                    (m.phone && m.phone.includes(search)))
-                );
-                
+                const s = search.trim();
+                const sNorm = normalizeText(s);
+                let result = members.filter(m => {
+                    if (m.status !== 'member') return false;
+                    if (!s) return true;
+                    const nameNorm = normalizeText(m.name || '');
+                    const phone = (m.phone || '').toString();
+                    return (sNorm && nameNorm.includes(sNorm)) || (phone && phone.includes(s));
+                });
+
                 if (selectedDept) {
                     result = result.filter(m => m.department === selectedDept);
                 }
-                
+
                 setFiltered(result);
             }, [search, selectedDept, members]);
 
@@ -1238,7 +1288,7 @@
                     source: 'manual'
                 };
                 setMembers(prev => [memberToAdd, ...prev]);
-                setShowModal(false);
+                if (setShowAddModal) setShowAddModal(false);
                 setNewMember({ name: '', phone: '', gender: '', department: '', status: 'member', address: '' });
             };
 
@@ -1247,7 +1297,7 @@
                     <div className="page-header">
                         <h1 className="page-title">Members ({members.filter(m => m.status === 'member').length})</h1>
                         <div style={{display: 'flex', gap: '10px'}}>
-                            <button className="btn btn-secondary" onClick={() => setShowModal(true)}>➕ Add Member</button>
+                            <button className="btn btn-secondary" onClick={() => setShowAddModal ? setShowAddModal(true) : null}>➕ Add Member</button>
                             <button className="btn btn-primary" onClick={() => exportToExcel(members, 'GeneralMembers')}>
                                 📥 Export Excel
                             </button>
@@ -1302,10 +1352,10 @@
                         {filtered.length === 0 && <div className="empty-state">No members found</div>}
                     </div>
 
-                    {showModal && (
-                        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+                    {showAddModal && (
+                        <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
                             <div className="modal" onClick={e => e.stopPropagation()}>
-                                <div className="modal-header">Add New Member<button className="modal-close" onClick={() => setShowModal(false)}>✕</button></div>
+                                <div className="modal-header">Add New Member<button className="modal-close" onClick={() => setShowAddModal(false)}>✕</button></div>
 
                                 <div className="form-group"><label className="form-label">Name *</label><input className="form-input" value={newMember.name} onChange={e => setNewMember({...newMember, name: e.target.value})} /></div>
                                 <div className="form-group"><label className="form-label">Phone</label><input className="form-input" value={newMember.phone} onChange={e => setNewMember({...newMember, phone: e.target.value})} /></div>
@@ -1318,7 +1368,7 @@
 
                                 <div style={{display:'flex', gap: '10px'}}>
                                     <button className="btn btn-success" onClick={handleAddNewMember}>Save Member</button>
-                                    <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
+                                    <button className="btn btn-secondary" onClick={() => setShowAddModal(false)}>Cancel</button>
                                 </div>
                             </div>
                         </div>
@@ -1586,6 +1636,7 @@
             const [user, setUser] = useState(null);
             const [currentPage, setCurrentPage] = useState('dashboard');
             const [membersLoaded, setMembersLoaded] = useState(false);
+            const [showAddModal, setShowAddModal] = useState(false);
             
             // Merge loaded JSON data with window.MEMBERS as fallback
             const initialMembers = [...loadedGeneralMembers, ...loadedFirstTimers].length > 0 
@@ -1629,13 +1680,14 @@
                         setCurrentPage={setCurrentPage}
                         user={user}
                         onLogout={() => setUser(null)}
+                        onOpenAddMember={() => { setCurrentPage('members'); setShowAddModal(true); }}
                     />
                     <div className="main-content">
                         {currentPage === 'dashboard' && (
                             <Dashboard members={displayMembers} attendance={attendance} />
                         )}
                         {currentPage === 'members' && (
-                            <GeneralMembersPage members={members} setMembers={setMembers} />
+                            <GeneralMembersPage members={members} setMembers={setMembers} showAddModal={showAddModal} setShowAddModal={setShowAddModal} />
                         )}
                         {currentPage === 'firstTimers' && (
                             <FirstTimerFollowupPage firstTimers={members.filter(m => m.status === 'first_timer')} />
