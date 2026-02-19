@@ -354,9 +354,19 @@
                     fetch('general_members.json'),
                     fetch('first_timers_followup.json')
                 ]);
-                
+
                 if (genResponse.ok) loadedGeneralMembers = await genResponse.json();
                 if (ftResponse.ok) loadedFirstTimers = await ftResponse.json();
+
+                // Expose on window so the app can pick it up synchronously
+                window.GENERAL_MEMBERS = loadedGeneralMembers;
+                window.FIRST_TIMERS = loadedFirstTimers;
+
+                // Merge general members first, then first timers (so first timers keep status)
+                window.MEMBERS = [...(window.GENERAL_MEMBERS || []), ...(window.FIRST_TIMERS || [])];
+
+                // Dispatch event for the app to pick up
+                try { document.dispatchEvent(new Event('membersLoaded')); } catch(e){}
             } catch (error) {
                 console.error('Error loading members data:', error);
             }
@@ -420,10 +430,10 @@
                 }
 
                 const deptInfo = window.DEPARTMENTS && window.DEPARTMENTS[selectedDept];
-                if (deptInfo && deptInfo.username === username && deptInfo.password === password) {
+                if (deptInfo && deptInfo.password === password) {
                     const isAdmin = selectedDept === 'admin';
                     onLogin({
-                        username,
+                        username: selectedDept,
                         dept: isAdmin ? 'all' : selectedDept,
                         role: isAdmin ? 'admin' : 'leader',
                         description: deptInfo.description
@@ -431,7 +441,7 @@
                     return;
                 }
 
-                setError('Invalid username or password for the selected department');
+                setError('Invalid password for the selected department');
             };
 
             return (
@@ -439,7 +449,7 @@
                     <div className="login-box">
                         <img src="spirit realm centre logo.jpg" className="login-logo-img" alt="Spirit Realm Centre Logo" title="Spirit Realm Centre" />
                         <h2 style={{textAlign: 'center', marginBottom: '10px', color: '#2E4A9E'}}>Spirit Realm Centre</h2>
-                        <p style={{textAlign: 'center', marginBottom: '20px', color: '#666', fontSize: '13px'}}>Church Management System v2.0</p>
+                        <p style={{textAlign: 'center', marginBottom: '20px', color: '#666', fontSize: '13px'}}>Church Management System</p>
 
                         {error && <div className="alert alert-danger">{error}</div>}
 
@@ -449,21 +459,9 @@
                                 <select className="form-select" value={selectedDept} onChange={e => setSelectedDept(e.target.value)} required>
                                     <option value="">-- Select Department --</option>
                                     {deptList.map(([key, dept]) => (
-                                        <option key={key} value={key}>{dept.description || key}</option>
+                                        <option key={key} value={key}>{key}</option>
                                     ))}
                                 </select>
-                            </div>
-
-                            <div className="form-group">
-                                <input
-                                    type="text"
-                                    className="form-input"
-                                    placeholder="Username"
-                                    value={username}
-                                    onChange={(e) => setUsername(e.target.value)}
-                                    required
-                                    autoFocus
-                                />
                             </div>
 
                             <div className="form-group">
@@ -474,6 +472,7 @@
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
+                                    autoFocus
                                 />
                             </div>
 
@@ -488,7 +487,7 @@
         function Sidebar({ currentPage, setCurrentPage, user, onLogout }) {
             const menuItems = [
                 { id: 'dashboard', label: 'Dashboard', icon: '🏠' },
-                { id: 'generalMembers', label: 'All Members', icon: '👥' },
+                { id: 'members', label: 'Members', icon: '👥' },
                 { id: 'firstTimers', label: 'First Timers', icon: '🆕' },
                 { id: 'cellChurches', label: 'Cell Churches', icon: '⛪' },
                 { id: 'attendance', label: 'Attendance', icon: '📝' },
@@ -1197,10 +1196,12 @@
         }
 
         // General Members Component
-        function GeneralMembersPage({ members }) {
+        function GeneralMembersPage({ members, setMembers }) {
             const [search, setSearch] = useState('');
             const [selectedDept, setSelectedDept] = useState('');
             const [filtered, setFiltered] = useState(members);
+            const [showModal, setShowModal] = useState(false);
+            const [newMember, setNewMember] = useState({ name: '', phone: '', gender: '', department: '', status: 'member', address: '' });
 
             const depts = [...new Set(members.map(m => m.department))].filter(d => d && d !== 'Unassigned').sort();
 
@@ -1218,13 +1219,39 @@
                 setFiltered(result);
             }, [search, selectedDept, members]);
 
+            const deptOptions = window.DEPARTMENTS ? Object.keys(window.DEPARTMENTS).filter(k => k !== 'admin') : [];
+
+            const handleAddNewMember = () => {
+                if (!newMember.name.trim()) {
+                    alert('Name is required');
+                    return;
+                }
+                const nextId = Math.max(0, ...(members.map(m => m.id || 0))) + 1;
+                const memberToAdd = {
+                    id: nextId,
+                    name: newMember.name.trim(),
+                    phone: newMember.phone.trim(),
+                    gender: newMember.gender,
+                    address: newMember.address || '',
+                    status: newMember.status || 'member',
+                    department: newMember.department || 'Unassigned',
+                    source: 'manual'
+                };
+                setMembers(prev => [memberToAdd, ...prev]);
+                setShowModal(false);
+                setNewMember({ name: '', phone: '', gender: '', department: '', status: 'member', address: '' });
+            };
+
             return (
                 <div>
                     <div className="page-header">
-                        <h1 className="page-title">General Members ({members.filter(m => m.status === 'member').length})</h1>
-                        <button className="btn btn-primary" onClick={() => exportToExcel(members, 'GeneralMembers')}>
-                            📥 Export Excel
-                        </button>
+                        <h1 className="page-title">Members ({members.filter(m => m.status === 'member').length})</h1>
+                        <div style={{display: 'flex', gap: '10px'}}>
+                            <button className="btn btn-secondary" onClick={() => setShowModal(true)}>➕ Add Member</button>
+                            <button className="btn btn-primary" onClick={() => exportToExcel(members, 'GeneralMembers')}>
+                                📥 Export Excel
+                            </button>
+                        </div>
                     </div>
 
                     <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '20px'}}>
@@ -1274,6 +1301,28 @@
                         </table>
                         {filtered.length === 0 && <div className="empty-state">No members found</div>}
                     </div>
+
+                    {showModal && (
+                        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+                            <div className="modal" onClick={e => e.stopPropagation()}>
+                                <div className="modal-header">Add New Member<button className="modal-close" onClick={() => setShowModal(false)}>✕</button></div>
+
+                                <div className="form-group"><label className="form-label">Name *</label><input className="form-input" value={newMember.name} onChange={e => setNewMember({...newMember, name: e.target.value})} /></div>
+                                <div className="form-group"><label className="form-label">Phone</label><input className="form-input" value={newMember.phone} onChange={e => setNewMember({...newMember, phone: e.target.value})} /></div>
+                                <div className="form-group"><label className="form-label">Address</label><input className="form-input" value={newMember.address} onChange={e => setNewMember({...newMember, address: e.target.value})} /></div>
+                                <div className="grid-2">
+                                    <div className="form-group"><label className="form-label">Gender</label><select className="form-select" value={newMember.gender} onChange={e => setNewMember({...newMember, gender: e.target.value})}><option value="">Select</option><option value="male">Male</option><option value="female">Female</option></select></div>
+                                    <div className="form-group"><label className="form-label">Department</label><select className="form-select" value={newMember.department} onChange={e => setNewMember({...newMember, department: e.target.value})}><option value="">Unassigned</option>{deptOptions.map(d => <option key={d} value={d}>{d}</option>)}</select></div>
+                                </div>
+                                <div className="form-group"><label className="form-label">Status</label><select className="form-select" value={newMember.status} onChange={e => setNewMember({...newMember, status: e.target.value})}><option value="member">Member</option><option value="first_timer">First Timer</option></select></div>
+
+                                <div style={{display:'flex', gap: '10px'}}>
+                                    <button className="btn btn-success" onClick={handleAddNewMember}>Save Member</button>
+                                    <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         }
@@ -1547,12 +1596,21 @@
             const [cellChurches, setCellChurches] = useLocalStorage('src_cell_churches', []);
             const [attendance, setAttendance] = useLocalStorage('src_attendance_v2', []);
 
-            // Update members when JSON data loads
+            // Update members when JSON data loads (listen for event dispatched by loader)
             useEffect(() => {
-                if (loadedGeneralMembers.length > 0 || loadedFirstTimers.length > 0) {
-                    setMembers([...loadedGeneralMembers, ...loadedFirstTimers]);
-                    setMembersLoaded(true);
-                }
+                const onLoaded = () => {
+                    if (window.MEMBERS && window.MEMBERS.length) {
+                        setMembers(window.MEMBERS);
+                        setMembersLoaded(true);
+                    }
+                };
+
+                document.addEventListener('membersLoaded', onLoaded);
+
+                // If already loaded by the time the component mounts
+                if (window.MEMBERS && window.MEMBERS.length) onLoaded();
+
+                return () => document.removeEventListener('membersLoaded', onLoaded);
             }, []);
 
             // Filter members based on user role
@@ -1576,8 +1634,8 @@
                         {currentPage === 'dashboard' && (
                             <Dashboard members={displayMembers} attendance={attendance} />
                         )}
-                        {currentPage === 'generalMembers' && (
-                            <GeneralMembersPage members={displayMembers} />
+                        {currentPage === 'members' && (
+                            <GeneralMembersPage members={members} setMembers={setMembers} />
                         )}
                         {currentPage === 'firstTimers' && (
                             <FirstTimerFollowupPage firstTimers={members.filter(m => m.status === 'first_timer')} />
@@ -1606,6 +1664,25 @@
         }
 
         ReactDOM.render(<App />, document.getElementById('root'));
+
+        // TEMP: If URL contains ?openModal=1, auto-open the Add Member modal for quick visual testing
+        setTimeout(() => {
+            try {
+                if (window.location.search && window.location.search.includes('openModal=1')) {
+                    // try to find the Add Member button and click it
+                    const addBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent && b.textContent.includes('Add Member'))
+                        || Array.from(document.querySelectorAll('button')).find(b => b.textContent && b.textContent.includes('➕ Add Member'));
+                    if (addBtn) {
+                        addBtn.click();
+                        console.log('Auto-clicked Add Member button for testing');
+                    } else {
+                        // fallback: open Members tab then try again shortly after
+                        const membersTab = Array.from(document.querySelectorAll('.nav-item')).find(n => n.textContent && n.textContent.includes('Members'));
+                        if (membersTab) { membersTab.click(); setTimeout(() => { const b = Array.from(document.querySelectorAll('button')).find(x => x.textContent && (x.textContent.includes('Add Member') || x.textContent.includes('➕ Add Member'))); if (b) b.click(); }, 300); }
+                    }
+                }
+            } catch (e) { console.error('Auto-open modal failed', e); }
+        }, 800);
     </script>
 </body>
 </html>
