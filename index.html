@@ -353,6 +353,7 @@
         }
 
         // Load data from JSON files and normalize departments
+        // Priority: general_members.json + first_timers_followup.json
         async function loadMembersData() {
             try {
                 const [genResponse, ftResponse] = await Promise.all([
@@ -360,8 +361,14 @@
                     fetch('first_timers_followup.json')
                 ]);
 
-                if (genResponse.ok) loadedGeneralMembers = await genResponse.json();
-                if (ftResponse.ok) loadedFirstTimers = await ftResponse.json();
+                if (genResponse.ok) {
+                    const data = await genResponse.json();
+                    loadedGeneralMembers = Array.isArray(data) ? data : (data.members || []);
+                }
+                if (ftResponse.ok) {
+                    const data = await ftResponse.json();
+                    loadedFirstTimers = Array.isArray(data) ? data : (data.members || []);
+                }
 
                 // Expose on window so the app can pick it up synchronously
                 window.GENERAL_MEMBERS = loadedGeneralMembers;
