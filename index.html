@@ -1189,20 +1189,51 @@
             const suggestDeptFor = (member) => {
                 const name = normalizeText(member.name || '');
                 const deptRaw = normalizeText(member.department || '');
+                const nameTokens = name.split(' ').filter(Boolean);
                 let best = { dept: '', score: 0 };
                 canonical.forEach(dk => {
                     const ndk = normalizeText(dk);
+                    const dkTokens = ndk.split(' ').filter(Boolean);
                     const desc = normalizeText((window.DEPARTMENTS[dk] && window.DEPARTMENTS[dk].description) || '');
+                    const descTokens = desc.split(' ').filter(Boolean);
+
                     let score = 0;
-                    if (deptRaw && (deptRaw === ndk || deptRaw.includes(ndk) || ndk.includes(deptRaw))) score += 4;
-                    if (name && ndk && name.includes(ndk)) score += 3;
-                    if (name && ndk) {
-                        ndk.split(' ').forEach(tok => { if (tok && name.includes(tok)) score += 1; });
-                    }
-                    if (desc && (name.includes(desc) || deptRaw.includes(desc))) score += 1;
+                    // strong matches
+                    if (deptRaw && (deptRaw === ndk || deptRaw.includes(ndk) || ndk.includes(deptRaw))) score += 5;
+                    if (name && ndk && name.includes(ndk)) score += 4;
+
+                    // token overlap
+                    dkTokens.forEach(tok => { if (tok && nameTokens.includes(tok)) score += 2; });
+                    descTokens.forEach(tok => { if (tok && nameTokens.includes(tok)) score += 1; });
+
+                    // partial token matches
+                    dkTokens.forEach(dt => {
+                        nameTokens.forEach(nt => { if (nt.includes(dt) || dt.includes(nt)) score += 1; });
+                    });
+
                     if (score > best.score) best = { dept: dk, score };
                 });
                 return best.score > 0 ? best.dept : '';
+            };
+
+            const getSuggestionCounts = () => {
+                const counts = {};
+                unmapped.forEach(m => {
+                    const s = suggestDeptFor(m);
+                    if (s) counts[s] = (counts[s] || 0) + 1;
+                });
+                return counts;
+            };
+
+            const applySuggestions = () => {
+                const toAssign = unmapped.map(m => ({ id: m.id, suggested: suggestDeptFor(m) })).filter(x => x.suggested);
+                if (toAssign.length === 0) { alert('No suggestions to apply'); return; }
+                const counts = toAssign.reduce((acc, cur) => { acc[cur.suggested] = (acc[cur.suggested] || 0) + 1; return acc; }, {});
+                const preview = Object.entries(counts).map(([k,v]) => `${k}: ${v}`).join('\n');
+                if (!confirm(`Apply the following suggestions?\n\n${preview}\n\nThis will update member department fields.`)) return;
+                const assignMap = toAssign.reduce((acc, cur) => { acc[cur.id] = cur.suggested; return acc; }, {});
+                setMembers(prev => prev.map(m => (assignMap[m.id] ? { ...m, department: assignMap[m.id] } : m)));
+                alert(`Applied ${toAssign.length} suggested mappings`);
             };
 
             // Initial assignments prefilled with suggestions
@@ -1242,6 +1273,8 @@
                                 {canonical.map(d => <option key={d} value={d}>{d}</option>)}
                             </select>
                             <button className="btn btn-primary" onClick={() => { const sel = document.getElementById('assignAllSelect').value; if (sel) assignAllTo(sel); }}>Assign All</button>
+                            <button className="btn btn-info" onClick={() => { const counts = getSuggestionCounts(); if (Object.keys(counts).length === 0) return alert('No suggestions available'); alert('Suggestions:\n' + Object.entries(counts).map(([k,v]) => `${k}: ${v}`).join('\n')); }}>Preview Suggestions</button>
+                            <button className="btn btn-success" onClick={applySuggestions}>Apply Suggestions</button>
                         </div>
                     </div>
 
