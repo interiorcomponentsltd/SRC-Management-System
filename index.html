@@ -1252,6 +1252,29 @@
             const [history, setHistory] = useState(() => {
                 try { return JSON.parse(window.localStorage.getItem('mapping_history') || '[]'); } catch { return []; }
             });
+            const [expanded, setExpanded] = useState({});
+
+            const toggleExpanded = (idx) => setExpanded(prev => ({ ...prev, [idx]: !prev[idx] }));
+
+            const getMemberName = (id) => {
+                const m = members.find(x => x.id === id) || members.find(x => String(x.id) === String(id));
+                return m ? m.name : `#${id}`;
+            };
+
+            const exportHistory = () => {
+                try {
+                    const payload = history || [];
+                    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `mapping_history_${Date.now()}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    URL.revokeObjectURL(url);
+                } catch (e) { alert('Export failed: ' + e.message); }
+            };
 
             const pushHistory = (entry) => {
                 const next = [...history, entry];
@@ -1352,14 +1375,47 @@
                         </div>
 
                         <div style={{padding: 15}}>
-                            <div style={{fontWeight:600, marginBottom:8}}>Mapping History</div>
-                            {(history || []).length === 0 && <div className="empty-state">No mapping actions yet</div>}
-                            {(history || []).slice().reverse().map((h, idx) => (
-                                <div key={idx} style={{padding:8, borderBottom:'1px solid #eee'}}>
-                                    <div style={{fontSize:13, fontWeight:700}}>{h.action} • {new Date(h.ts).toLocaleString()}</div>
-                                    <div style={{fontSize:12, color:'#444'}}>{h.changes.length} changes</div>
+                            <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
+                                <div style={{fontWeight:600}}>Mapping History</div>
+                                <div style={{display:'flex', gap:8}}>
+                                    <button className="btn btn-sm btn-secondary" onClick={exportHistory}>Export Audit Log</button>
                                 </div>
-                            ))}
+                            </div>
+
+                            {(history || []).length === 0 && <div className="empty-state">No mapping actions yet</div>}
+                            {(history || []).slice().reverse().map((h, idx) => {
+                                const realIdx = (history || []).length - 1 - idx;
+                                return (
+                                <div key={realIdx} style={{padding:8, borderBottom:'1px solid #eee'}}>
+                                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                                        <div>
+                                            <div style={{fontSize:13, fontWeight:700}}>{h.action} • {new Date(h.ts).toLocaleString()}</div>
+                                            <div style={{fontSize:12, color:'#444'}}>{h.changes.length} changes</div>
+                                        </div>
+                                        <div style={{display:'flex', gap:8}}>
+                                            <button className="btn btn-sm btn-outline" onClick={() => toggleExpanded(realIdx)}>{expanded[realIdx] ? 'Hide' : 'Details'}</button>
+                                        </div>
+                                    </div>
+                                    {expanded[realIdx] && (
+                                        <div style={{marginTop:8, padding:8, background:'#fafafa', borderRadius:6}}>
+                                            <table style={{width:'100%'}}>
+                                                <thead>
+                                                    <tr><th style={{textAlign:'left'}}>Member</th><th style={{textAlign:'left'}}>From</th><th style={{textAlign:'left'}}>To</th></tr>
+                                                </thead>
+                                                <tbody>
+                                                    {h.changes.map(c => (
+                                                        <tr key={c.id}>
+                                                            <td style={{padding:'6px 4px'}}>{getMemberName(c.id)}</td>
+                                                            <td style={{padding:'6px 4px'}}>{c.from || 'Unassigned'}</td>
+                                                            <td style={{padding:'6px 4px'}}>{c.to || 'Unassigned'}</td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    )}
+                                </div>
+                            )})}
                         </div>
                     </div>
                 </div>
