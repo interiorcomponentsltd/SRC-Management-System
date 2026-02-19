@@ -1182,11 +1182,38 @@
 
         // Mapping Review Component - review unmapped members and assign canonical departments
         function MappingPage({ members, setMembers }) {
-            const [selection, setSelection] = useState({}); // id -> boolean
-            const [assignments, setAssignments] = useState({}); // id -> department
-
             const canonical = window.DEPARTMENTS ? Object.keys(window.DEPARTMENTS).filter(k => k !== 'admin') : [];
             const unmapped = members.filter(m => !canonical.includes(m.department));
+
+            // Suggestion logic: simple scoring based on normalized tokens
+            const suggestDeptFor = (member) => {
+                const name = normalizeText(member.name || '');
+                const deptRaw = normalizeText(member.department || '');
+                let best = { dept: '', score: 0 };
+                canonical.forEach(dk => {
+                    const ndk = normalizeText(dk);
+                    const desc = normalizeText((window.DEPARTMENTS[dk] && window.DEPARTMENTS[dk].description) || '');
+                    let score = 0;
+                    if (deptRaw && (deptRaw === ndk || deptRaw.includes(ndk) || ndk.includes(deptRaw))) score += 4;
+                    if (name && ndk && name.includes(ndk)) score += 3;
+                    if (name && ndk) {
+                        ndk.split(' ').forEach(tok => { if (tok && name.includes(tok)) score += 1; });
+                    }
+                    if (desc && (name.includes(desc) || deptRaw.includes(desc))) score += 1;
+                    if (score > best.score) best = { dept: dk, score };
+                });
+                return best.score > 0 ? best.dept : '';
+            };
+
+            // Initial assignments prefilled with suggestions
+            const initialAssignments = {};
+            unmapped.forEach(m => {
+                const s = suggestDeptFor(m);
+                if (s) initialAssignments[m.id] = s;
+            });
+
+            const [selection, setSelection] = useState({}); // id -> boolean
+            const [assignments, setAssignments] = useState(initialAssignments); // id -> department
 
             const toggleSelect = (id) => setSelection(prev => ({ ...prev, [id]: !prev[id] }));
             const setAssign = (id, dept) => setAssignments(prev => ({ ...prev, [id]: dept }));
@@ -1234,7 +1261,9 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {unmapped.map(m => (
+                                {unmapped.map(m => {
+                                    const suggested = suggestDeptFor(m);
+                                    return (
                                     <tr key={m.id}>
                                         <td><input type="checkbox" checked={!!selection[m.id]} onChange={() => toggleSelect(m.id)} /></td>
                                         <td><strong>{m.name}</strong></td>
@@ -1245,9 +1274,10 @@
                                                 <option value="">--</option>
                                                 {canonical.map(d => <option key={d} value={d}>{d}</option>)}
                                             </select>
+                                            {(!assignments[m.id] && suggested) && <div style={{marginTop:6}}><span className="badge badge-info">Suggested: {suggested}</span></div>}
                                         </td>
                                     </tr>
-                                ))}
+                                )})}
                             </tbody>
                         </table>
 
