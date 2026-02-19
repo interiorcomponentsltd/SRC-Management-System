@@ -2,7 +2,7 @@
 // Auto-generated: 338 members from Excel extraction
 
 // Department Login Credentials
-const DEPARTMENTS = {
+window.DEPARTMENTS = {
   "Men of Impact": {
     "username": "menofimpact",
     "password": "SRC2024menofimpact",
@@ -61,7 +61,7 @@ const DEPARTMENTS = {
 };
 
 // All Members Data (338 total)
-const MEMBERS = [
+window.MEMBERS = [
   {
     "id": 1,
     "s_n": 1,
@@ -7163,7 +7163,7 @@ const MEMBERS = [
 ];
 
 // Department-specific member lists
-const DEPARTMENT_MEMBERS = {
+window.DEPARTMENT_MEMBERS = {
     'Counseling': [10, 20, 30, 40, 50, 60, 70, 80, 90],
     'Godly Action': [9, 19, 29, 39, 49, 59, 69, 79, 89, 337, 338],
     'Media': [8, 18, 28, 38, 48, 58, 68, 78, 88, 98, 334],
@@ -7177,7 +7177,7 @@ const DEPARTMENT_MEMBERS = {
 };
 
 // Cell Church Groups (for group-based organization)
-const CELL_CHURCHES = [
+window.CELL_CHURCHES = [
     {
         id: 1,
         name: 'Sample Cell Group 1',
@@ -7190,10 +7190,10 @@ const CELL_CHURCHES = [
 ];
 
 // Attendance Records
-const ATTENDANCE_RECORDS = [];
+window.ATTENDANCE_RECORDS = [];
 
 // System Configuration
-const CONFIG = {
+window.CONFIG = {
     app_name: 'Spirit Realm Centre - Management System',
     version: '2.0.0',
     church_name: 'Spirit Realm Centre',
@@ -7202,7 +7202,4 @@ const CONFIG = {
     total_departments: 10
 };
 
-// Export for use in app
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { DEPARTMENTS, MEMBERS, DEPARTMENT_MEMBERS, CELL_CHURCHES, ATTENDANCE_RECORDS, CONFIG };
-}
+// Data is now accessible via window object for browser-based React app
